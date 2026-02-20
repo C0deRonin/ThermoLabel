@@ -64,4 +64,13 @@ describe("storageService with postgres-only project persistence", () => {
     expect(localStorage.getItem("thermolabel:project:p-1")).toBeNull();
     expect(localStorage.getItem("thermolabel:projects:list")).toBeNull();
   });
+
+  it("getClasses falls back to locally cached classes when API is unavailable", async () => {
+    apiService.getClasses.mockRejectedValue(new Error("network"));
+    localStorage.setItem("thermolabel:classes", JSON.stringify([{ name: "Local" }]));
+
+    const classes = await storageService.getClasses();
+
+    expect(classes).toEqual([{ name: "Local" }]);
+  });
 });

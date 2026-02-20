@@ -1,29 +1,41 @@
-import { resolveApiBase } from "@/lib/services/apiService";
+import apiService from "@/lib/services/apiService";
 
-describe("resolveApiBase", () => {
-  const originalEnv = process.env.NEXT_PUBLIC_API_URL;
+describe("apiService proxy routing", () => {
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
 
   afterEach(() => {
-    if (originalEnv === undefined) {
-      delete process.env.NEXT_PUBLIC_API_URL;
-    } else {
-      process.env.NEXT_PUBLIC_API_URL = originalEnv;
-    }
+    jest.resetAllMocks();
   });
 
-  it("uses NEXT_PUBLIC_API_URL when provided", () => {
-    process.env.NEXT_PUBLIC_API_URL = "https://api.example.com";
-    expect(resolveApiBase()).toBe("https://api.example.com");
+  it("routes project save through same-origin /api/proxy", async () => {
+    global.fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+
+    await apiService.saveProject({ id: "p1" });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/proxy/projects",
+      expect.objectContaining({ method: "POST" })
+    );
   });
 
-  it("maps github codespaces frontend host to backend 8000 host", () => {
-    delete process.env.NEXT_PUBLIC_API_URL;
+  it("routes classes read through same-origin /api/proxy", async () => {
+    global.fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ classes: [] }),
+    });
 
-    const loc = {
-      protocol: "https:",
-      hostname: "fancy-space-abc123-3000.app.github.dev",
-    };
+    await apiService.getClasses();
 
-    expect(resolveApiBase(loc)).toBe("https://fancy-space-abc123-8000.app.github.dev");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/proxy/settings/classes",
+      expect.any(Object)
+    );
   });
 });
