@@ -11,8 +11,11 @@ from pathlib import Path
 # Add backend directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import DATABASE_URL
-from models import Base
+from app.core.config import settings
+from app.core.database import Base
+import app.models  # noqa: F401 — register models with Base.metadata
+
+DATABASE_URL = settings.DATABASE_URL
 
 # this is the Alembic Config object
 config = context.config

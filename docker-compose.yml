@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -63,7 +61,8 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    command: npm run dev
+    # -H 0.0.0.0 чтобы приложение было доступно по localhost с хоста
+    command: npm run dev -- -H 0.0.0.0
     networks:
       - thermolabel-network
     restart: unless-stopped

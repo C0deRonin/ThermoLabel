@@ -1,15 +1,13 @@
-// TESTING.md
 # 🧪 Тестирование ThermoLabel
+
+Приложение и тесты запускаются **только через Docker**. См. README.md.
 
 ## ✅ Быстрая проверка (Quick Start Test)
 
 ### 1. Запуск приложения
 
 ```bash
-# Убедитесь что npm установлен
-npm install
-npm run dev
-
+docker compose up -d
 # Откройте http://localhost:3000 в браузере
 ```
 

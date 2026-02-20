@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core import settings, init_db
 from app.api import router
+import app.models  # noqa: F401 — ensure models are registered before init_db()
 
 
 def create_app() -> FastAPI:

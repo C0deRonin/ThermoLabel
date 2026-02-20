@@ -3,17 +3,15 @@
 from pathlib import Path
 from typing import Any, List
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 import numpy as np
 
 from app.core import get_db
-from app.core.exceptions import (
-    ThermoLabelException,
-    ProjectNotFoundError,
-    ValidationError,
-)
+from app.core.exceptions import ProjectNotFoundError, ValidationError
 from app.schemas import ProjectCreate, SettingsUpdate
 from app.services import ProjectService, SettingsService
+from app.services.db_dump import export_dump_sql, import_dump_sql, import_dump_custom
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -195,3 +193,41 @@ async def validate_annotations(data: dict):
         "issues": issues,
         "warnings": warnings,
     }
+
+
+# Database dump export/import
+@router.get("/db/export")
+async def db_export():
+    """Export database as SQL dump file."""
+    try:
+        content, filename = export_dump_sql()
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return StreamingResponse(
+        iter([content]),
+        media_type="application/sql",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(content)),
+        },
+    )
+
+
+@router.post("/db/import")
+async def db_import(file: UploadFile = File(...)):
+    """Import database from SQL or custom-format (.dump) file."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+    ext = (Path(file.filename).suffix or "").lower()
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="File is empty")
+    try:
+        if ext == ".dump":
+            msg = import_dump_custom(content)
+        else:
+            # .sql or any other: treat as SQL
+            msg = import_dump_sql(content)
+        return {"ok": True, "message": msg}
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))

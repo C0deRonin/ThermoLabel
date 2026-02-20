@@ -39,6 +39,7 @@ import Analytics from "@/components/Analytics";
 import ClassManager from "@/components/ClassManager";
 import ProjectsMenu from "@/components/ProjectsMenu";
 import ImageLoadModal from "@/components/ImageLoadModal";
+import DatabaseDumpModal from "@/components/DatabaseDumpModal";
 
 export default function Home({ theme, onThemeChange }) {
   // Canvas refs
@@ -77,6 +78,7 @@ export default function Home({ theme, onThemeChange }) {
   const [newColor, setNewColor] = useState("#ff00ff");
   const [stats, setStats] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [showDumpModal, setShowDumpModal] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
 
   // Helper function for translations
@@ -978,6 +980,24 @@ export default function Home({ theme, onThemeChange }) {
             onProjectCreate={handleNewProject}
           />
           <button
+            onClick={() => setShowDumpModal(true)}
+            style={{
+              padding: "5px 9px",
+              border: "1px solid",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: 10,
+              borderRadius: 5,
+              transition: "all 0.12s",
+              borderColor: cs.border,
+              background: "transparent",
+              color: cs.dim,
+            }}
+            title={t("dump_modal_title")}
+          >
+            📦 {t("dump_btn")}
+          </button>
+          <button
             onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
             style={{
               padding: "5px 9px",
@@ -1021,6 +1041,13 @@ export default function Home({ theme, onThemeChange }) {
         isOpen={showImageModal}
         onLoad={handleImageLoad}
         onCancel={() => setShowImageModal(false)}
+      />
+
+      {/* Database dump export/import modal */}
+      <DatabaseDumpModal
+        isOpen={showDumpModal}
+        onClose={() => setShowDumpModal(false)}
+        t={t}
       />
 
       {/* Main Content */}

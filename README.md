@@ -1,100 +1,114 @@
 # ThermoLabel - Thermal Image Annotation Tool
 
-Complete Docker-based solution for thermal image annotation and analysis.
+Приложение для аннотирования тепловых изображений. **Запуск только через Docker.** Инициализация и перенос данных — **только по дампу** (SQL/бинарный дамп PostgreSQL).
 
-## Quick Start
-
-### Prerequisites
+## Требования
 
 - Docker
 - Docker Compose
 - Git
 
-### Installation & Run
+## Быстрый старт
 
-1. **Clone the repository**
+1. **Клонировать репозиторий**
    ```bash
    git clone https://github.com/C0deRonin/ThermoLabel.git
    cd ThermoLabel
    ```
 
-2. **Prepare your database dump (optional)**
-   ```bash
-   # If you have existing data, export it:
-   pg_dump -U username -d thermolabel_db > database-dump.sql
-   
-   # Place the dump file in the project root
-   # The file must be named: database-dump.sql
-   ```
+2. **Подготовить дамп БД (опционально)**
+   - Положите файл `database-dump.sql` в корень проекта — он будет применён при первом запуске контейнера БД.
+   - Или после запуска создайте дамп: см. раздел «Резервное копирование и восстановление».
 
-3. **Start all services**
+3. **Запустить все сервисы (единственный способ запуска)**
    ```bash
    docker compose up -d
    ```
+   Или на Windows: `.\start.bat`; на Linux/macOS: `./start.sh`.
 
-4. **Access the application**
+4. **Открыть приложение**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
+   - Документация API: http://localhost:8000/docs
 
-5. **Stop services**
+5. **Остановить**
    ```bash
    docker compose down
    ```
 
 ---
 
-## Database Initialization
+## Инициализация БД: только перенос по дампу
 
-### First Time Setup (Empty Database)
+Используется **один способ** инициализации и переноса данных — **по дампу**:
 
-Docker will automatically:
-1. Create the PostgreSQL database
-2. Initialize tables from `backend/init-db.sql`
-3. Load any data from `database-dump.sql` (if exists)
+1. **При первом запуске Docker**
+   - Создаётся БД PostgreSQL.
+   - Применяется схема из `backend/init-db.sql` (монтируется в `docker-entrypoint-initdb.d/01-schema.sql`).
+   - Применяется дамп данных из `database-dump.sql` (монтируется в `docker-entrypoint-initdb.d/02-data.sql`), если файл есть в корне проекта.
 
-### Restore from Existing Dump
+2. **Восстановление из существующего дампа**
+   - Положите ваш `database-dump.sql` в корень проекта (или используйте бинарный дамп — см. скрипты ниже).
+   - Для «чистого» старта удалите volume БД и снова запустите: `docker compose down -v && docker compose up -d`.
 
-1. Export your database:
-   ```bash
-   pg_dump -U thermolabel_user -d thermolabel_db > database-dump.sql
-   ```
-
-2. Copy file to project root:
-   ```bash
-   cp database-dump.sql /path/to/ThermoLabel/
-   ```
-
-3. Start services:
-   ```bash
-   docker compose up -d
-   ```
+Других способов инициализации БД (миграции Alembic, скрипты вне Docker) в проекте не предусмотрено.
 
 ---
 
-## Backup & Restore
+## Резервное копирование и восстановление (по дампу)
 
-### Create Backup
+### Создать бэкап (бинарный дамп)
 
 ```bash
-docker exec thermolabel-db pg_dump -U thermolabel_user -d thermolabel_db > backup.sql
+./scripts/db-backup.sh
+# Создаётся ./backups/thermolabel_YYYYMMDD_HHMMSS.zip
 ```
 
-### Restore Backup
+### Восстановить из дампа
 
 ```bash
-docker exec -i thermolabel-db psql -U thermolabel_user -d thermolabel_db < backup.sql
+./scripts/db-restore.sh /path/to/thermolabel_YYYYMMDD_HHMMSS.zip
+# или
+./scripts/db-restore.sh /path/to/file.dump
+```
+
+Создание SQL-дампа вручную (для `database-dump.sql`):
+
+```bash
+docker exec thermolabel-db pg_dump -U thermolabel_user -d thermolabel_db > database-dump.sql
 ```
 
 ---
 
-## Services
+## Тесты перед Pull Request
 
-| Service | Port | Purpose |
-|---------|------|---------|
-| Frontend | 3000 | Next.js web application |
-| Backend | 8000 | FastAPI REST API |
-| Database | 5432 | PostgreSQL database |
+Перед созданием pull request необходимо выполнить тесты. Запуск **только в Docker**:
+
+```bash
+# Backend (pytest)
+docker exec thermolabel-backend pytest tests/ -v --cov
+
+# Frontend (Jest) — в контейнере frontend или локально при уже поднятом стеке
+docker exec thermolabel-frontend npm test -- --coverage --watchAll=false
+```
+
+Или одной командой (после `docker compose up -d`):
+
+```bash
+./scripts/run-tests.sh
+```
+
+Если скрипт отсутствует, выполните обе команды `docker exec` выше по очереди.
+
+---
+
+## Сервисы
+
+| Сервис   | Порт | Назначение        |
+|----------|------|-------------------|
+| Frontend | 3000 | Next.js приложение |
+| Backend  | 8000 | FastAPI REST API  |
+| Database | 5432 | PostgreSQL        |
 
 ---
 
@@ -121,15 +135,9 @@ docker exec -i thermolabel-db psql -U thermolabel_user -d thermolabel_db < backu
 
 ---
 
-## Development
+## Разработка
 
-### Run Tests
-
-```bash
-docker exec thermolabel-backend pytest tests/ -v --cov
-```
-
-### View Logs
+### Логи
 
 ```bash
 docker compose logs -f backend
@@ -137,7 +145,7 @@ docker compose logs -f frontend
 docker compose logs -f postgres
 ```
 
-### Access Database
+### Доступ к БД
 
 ```bash
 docker exec -it thermolabel-db psql -U thermolabel_user -d thermolabel_db
@@ -145,31 +153,31 @@ docker exec -it thermolabel-db psql -U thermolabel_user -d thermolabel_db
 
 ---
 
-## Project Structure
+## Структура проекта
 
 ```
 ThermoLabel/
 ├── backend/
 │   ├── app/
-│   │   ├── api/              # API routes (Presentation Layer)
-│   │   ├── core/             # Config, database, exceptions
-│   │   ├── models/           # SQLAlchemy models
-│   │   ├── schemas/          # Pydantic schemas
-│   │   ├── services/         # Business logic
-│   │   ├── repositories/     # Data access layer
-│   │   └── __init__.py      # App factory
-│   ├── tests/                # Unit and integration tests
+│   │   ├── api/              # Маршруты API (Presentation)
+│   │   ├── core/             # Конфиг, БД, исключения
+│   │   ├── models/           # Модели SQLAlchemy
+│   │   ├── schemas/          # Схемы Pydantic
+│   │   ├── services/         # Бизнес-логика
+│   │   ├── repositories/     # Доступ к данным
+│   │   └── __init__.py
+│   ├── tests/
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   ├── init-db.sql          # Database schema
-│   └── main.py              # Entrypoint
-├── frontend/
-│   ├── pages/                # Next.js pages
-│   ├── components/           # React components
-│   ├── lib/                  # Utilities
-│   └── Dockerfile.frontend
-├── docker-compose.yml        # Docker services
-├── database-dump.sql        # Database data (optional)
+│   ├── init-db.sql           # Схема БД (для Docker init по дампу)
+│   └── main.py
+├── pages/, components/, lib/ # Next.js frontend
+├── scripts/
+│   ├── db-backup.sh          # Бэкап по дампу
+│   ├── db-restore.sh         # Восстановление по дампу
+│   └── run-tests.sh          # Тесты перед PR
+├── docker-compose.yml
+├── database-dump.sql         # Данные БД (опционально)
 └── README.md
 ```
 
