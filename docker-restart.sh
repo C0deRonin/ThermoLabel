@@ -22,44 +22,89 @@ else
   exit 1
 fi
 
-stop_publishers_for_port() {
+print_port_holders() {
   local port="$1"
-  local pids docker_ps
+  echo "  checking listeners on :$port"
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -nP -iTCP:"$port" -sTCP:LISTEN 2>/dev/null || true
+  elif command -v ss >/dev/null 2>&1; then
+    ss -ltnp "( sport = :$port )" 2>/dev/null || true
+  else
+    echo "  lsof/ss not found"
+  fi
+}
+
+kill_host_port_holders() {
+  local port="$1"
+  local pids=""
 
   if command -v lsof >/dev/null 2>&1; then
-    pids=$(lsof -t -i TCP:"$port" -sTCP:LISTEN 2>/dev/null || true)
-    if [ -n "$pids" ]; then
-      echo "  killing local pid(s) on :$port => $pids"
-      kill -9 $pids 2>/dev/null || true
-    fi
-  else
-    echo "  lsof not found, skipping host PID cleanup for :$port"
+    pids=$(lsof -t -iTCP:"$port" -sTCP:LISTEN 2>/dev/null || true)
+  elif command -v ss >/dev/null 2>&1; then
+    pids=$(ss -ltnp "( sport = :$port )" 2>/dev/null | sed -n 's/.*pid=\([0-9]\+\).*/\1/p' | sort -u)
   fi
 
-  docker_ps=$(docker ps --filter "publish=$port" --format '{{.ID}}')
-  if [ -n "$docker_ps" ]; then
-    echo "  stopping docker container(s) publishing :$port => $docker_ps"
-    docker stop $docker_ps >/dev/null 2>&1 || true
-    docker rm -f $docker_ps >/dev/null 2>&1 || true
+  if [ -n "$pids" ]; then
+    echo "  killing host pid(s) on :$port => $pids"
+    kill -9 $pids 2>/dev/null || true
   fi
+
+  # fallback for environments with fuser only
+  if command -v fuser >/dev/null 2>&1; then
+    fuser -k -n tcp "$port" 2>/dev/null || true
+  fi
+
+  # docker-proxy может остаться даже после stop/rm
+  local docker_proxy_pids
+  docker_proxy_pids=$(ps aux | awk -v p=":$port" '/docker-proxy/ && $0 ~ p {print $2}')
+  if [ -n "$docker_proxy_pids" ]; then
+    echo "  killing docker-proxy pid(s) on :$port => $docker_proxy_pids"
+    kill -9 $docker_proxy_pids 2>/dev/null || true
+  fi
+}
+
+stop_publishing_containers() {
+  local port="$1"
+  local docker_ids
+
+  docker_ids=$(docker ps --filter "publish=$port" --format '{{.ID}}' || true)
+  if [ -n "$docker_ids" ]; then
+    echo "  stopping container(s) publishing :$port => $docker_ids"
+    docker stop $docker_ids >/dev/null 2>&1 || true
+    docker rm -f $docker_ids >/dev/null 2>&1 || true
+  fi
+}
+
+free_port() {
+  local port="$1"
+  print_port_holders "$port"
+  stop_publishing_containers "$port"
+  kill_host_port_holders "$port"
+  sleep 1
+  print_port_holders "$port"
 }
 
 cleanup_ports() {
   for port in 3000 8000 5432; do
-    stop_publishers_for_port "$port"
+    echo -e "${YELLOW}🧹 Releasing :$port...${NC}"
+    free_port "$port"
   done
 }
 
 echo -e "${YELLOW}⏹️ Остановка текущих контейнеров проекта...${NC}"
 "${COMPOSE_CMD[@]}" down --remove-orphans 2>/dev/null || true
 
-echo -e "${YELLOW}🧹 Освобождение портов 3000/8000/5432...${NC}"
+echo -e "${YELLOW}🧹 Полная очистка портов...${NC}"
 cleanup_ports
+
+echo -e "${YELLOW}🧼 Очистка остановленных контейнеров/сирот...${NC}"
+docker container prune -f >/dev/null 2>&1 || true
+
 sleep 2
 
 echo -e "${YELLOW}🚀 Запуск проекта на порту 3000...${NC}"
 if ! "${COMPOSE_CMD[@]}" up --build -d --force-recreate; then
-  echo -e "${YELLOW}⚠️ Первый запуск не удался, повторная очистка портов и перезапуск...${NC}"
+  echo -e "${YELLOW}⚠️ Первый запуск не удался, повторная очистка и перезапуск...${NC}"
   cleanup_ports
   sleep 2
   "${COMPOSE_CMD[@]}" up --build -d --force-recreate

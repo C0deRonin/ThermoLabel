@@ -79,7 +79,7 @@ export default function Home({ theme, onThemeChange }) {
   const [currentProject, setCurrentProject] = useState(null);
 
   // Helper function for translations
-  const t = (key) => translations[language]?.[key] ?? key;
+  const t = useCallback((key) => translations[language]?.[key] ?? key, [language]);
 
   // Save project functionality
   const saveProject = useCallback(() => {
@@ -440,10 +440,10 @@ export default function Home({ theme, onThemeChange }) {
   );
 
   // Add annotation
-  const addAnnotation = (ann) => {
+  const addAnnotation = useCallback((ann) => {
     setUndoStack((p) => [...p, annotations]);
     setAnnotations((p) => [...p, ann]);
-  };
+  }, [annotations]);
 
   // Finish polygon
   const finishPolygon = useCallback(() => {
@@ -462,7 +462,7 @@ export default function Home({ theme, onThemeChange }) {
       ...bounds,
     });
     setPolyPts([]);
-  }, [polyPts, selClass, W]);
+  }, [polyPts, selClass, W, addAnnotation]);
 
   // Mouse handlers
   const handleMouseDown = (e) => {
