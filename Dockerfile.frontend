@@ -1,0 +1,19 @@
+# Dockerfile.frontend
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Копировать package files
+COPY package*.json ./
+
+# Установить зависимости
+RUN npm ci
+
+# Копировать исходный код
+COPY . .
+
+# Expose порт
+EXPOSE 3000
+
+# Development command
+CMD ["npm", "run", "dev"]

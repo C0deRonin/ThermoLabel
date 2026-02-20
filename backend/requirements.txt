@@ -1,0 +1,15 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+numpy==1.24.3
+python-multipart==0.0.6
+pillow==10.0.0
+psycopg2-binary==2.9.9
+SQLAlchemy==2.0.23
+alembic==1.13.1
+python-dotenv==1.0.0
+pydantic==2.5.0
+
+# Optional - для полной поддержки FLIR форматов
+# flir-image-extractor==0.1.0
+# opencv-python==4.8.0
+# scipy==1.11.3
