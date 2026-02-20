@@ -50,6 +50,9 @@ services:
     container_name: thermolabel-frontend
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
+      BACKEND_INTERNAL_URL: http://thermolabel-backend:8000
+      RUNNING_IN_DOCKER: "1"
+      NODE_ENV: development
     ports:
       - "3000:3000"
     depends_on:
