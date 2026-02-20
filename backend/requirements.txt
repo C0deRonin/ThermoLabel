@@ -5,11 +5,13 @@ python-multipart==0.0.6
 pillow==10.0.0
 psycopg2-binary==2.9.9
 SQLAlchemy==2.0.23
-alembic==1.13.1
-python-dotenv==1.0.0
 pydantic==2.5.0
+pydantic-settings==2.1.0
 
-# Optional - для полной поддержки FLIR форматов
-# flir-image-extractor==0.1.0
-# opencv-python==4.8.0
-# scipy==1.11.3
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+httpx==0.25.2
+
+# Development
+python-dotenv==1.0.0

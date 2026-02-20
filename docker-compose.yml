@@ -12,8 +12,11 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      # В Codespaces bind-mount в workspace переживает перезапуск контейнера
-      - ${POSTGRES_DATA_PATH:-./.docker/postgres-data}:/var/lib/postgresql/data
+      # Bind mount for data persistence
+      - thermolabel_db_data:/var/lib/postgresql/data
+      # Initialize database with dump file
+      - ${PWD}/backend/init-db.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ${PWD}/database-dump.sql:/docker-entrypoint-initdb.d/02-data.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U thermolabel_user -d thermolabel_db"]
       interval: 10s
@@ -38,7 +41,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - thermolabel-network
 
@@ -60,13 +63,14 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    command: >
-      sh -c '
-      npm run dev
-      '
+    command: npm run dev
     networks:
       - thermolabel-network
     restart: unless-stopped
+
+volumes:
+  thermolabel_db_data:
+    driver: local
 
 networks:
   thermolabel-network:

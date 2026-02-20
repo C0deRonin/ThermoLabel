@@ -1,273 +1,262 @@
-# ThermoLabel v0.3.0
+# ThermoLabel - Thermal Image Annotation Tool
 
-Веб-приложение для аннотации тепловизионных изображений с встроенной аналитикой датасетов.
+Complete Docker-based solution for thermal image annotation and analysis.
 
-> **📚 [Полная документация доступна в папке docs/](./docs/README.md)**
+## Quick Start
 
-## 🎯 Особенности
+### Prerequisites
 
-### ✅ v0.3.0 (Новое)
-- **Полное тестирование**: Jest с 73+ тестами для всех сервисов
-- **PostgreSQL интеграция**: SQLAlchemy ORM с Alembic миграциями
-- **Управление проектами**: Сохранение/загрузка с меню ProjectsMenu
-- **Загрузка без палитры**: ImageLoadModal с двумя режимами (с/без палитры)
-- **Темы оформления**: 
-  - 🌙 Темная тема (по умолчанию)
-  - ☀️ Светлая тема
-  - CSS переменные для динамического переключения
-- **Русский интерфейс**: 80+ переводов с fallback на английский
-- **Исправления**: State persistence, canvas initialization, экспорт функции
-- **Документация**: Полный набор гайдов, отчетов и API примеров
+- Docker
+- Docker Compose
+- Git
 
-### ✅ Существующие возможности
-- **Загрузка и просмотр**: JPEG, PNG, с поддержкой raw-форматов (FLIR .fff, .seq, Seek)
-- **Палитры отображения**: Iron, Rainbow, Grayscale, Hotspot, Arctic, Viridis
-- **Просмотр температур**: По пикселю при наведении курсора
-- **Инструменты аннотации**: 
-  - Bounding Box (прямоугольники)
-  - Полигоны (произвольные фигуры)
-  - Пороговый инструмент (авто-выделение по температуре)
-- **Классы с цветовой маркировкой**: Настраиваемые температурные диапазоны
-- **Экспорт**:
-  - YOLO (txt формат)
-  - COCO JSON
-  - Pascal VOC (XML)
-- **Аналитика датасета**:
-  - Распределение классов
-  - Тепловые карты аномалий
-  - Статистика температур (min/max/mean)
-  - Scatter plot позиций аннотаций
-- **История изменений**: Undo/Redo для аннотаций
-- **Управление проектами**: Сохранение/загрузка в localStorage
-- **Поиск аномалий**: Обнаружение статистических выбросов
+### Installation & Run
 
-## 📋 Требования
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/C0deRonin/ThermoLabel.git
+   cd ThermoLabel
+   ```
 
-- Node.js 18+ 
-- Python 3.8+ (опционально, для backend)
-- npm или yarn
+2. **Prepare your database dump (optional)**
+   ```bash
+   # If you have existing data, export it:
+   pg_dump -U username -d thermolabel_db > database-dump.sql
+   
+   # Place the dump file in the project root
+   # The file must be named: database-dump.sql
+   ```
 
-## � Документация
+3. **Start all services**
+   ```bash
+   docker compose up -d
+   ```
 
-Полная документация проекта организована в папке `docs/`:
+4. **Access the application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
 
-| Документ | Описание |
-|----------|----------|
-| [QUICKSTART.md](./docs/guides/QUICKSTART.md) | 5-минутный гайд для быстрого старта |
-| [USING_GUIDE.md](./docs/guides/USING_GUIDE.md) | Полное руководство пользователя |
-| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Архитектура и принципы проектирования |
-| [STRUCTURE.md](./docs/STRUCTURE.md) | Структура файлов проекта |
-| [TESTING.md](./docs/TESTING.md) | Руководство по тестированию и Jest |
-| [ROADMAP.md](./docs/ROADMAP.md) | План развития проекта |
-| [API_EXAMPLES.md](./docs/api/API_EXAMPLES.md) | Примеры использования API |
-| [FINAL_REPORT_v0.3.0.md](./docs/reports/FINAL_REPORT_v0.3.0.md) | Финальный отчет о v0.3.0 |
-| [UPDATES_v0.3.0.md](./docs/reports/UPDATES_v0.3.0.md) | Описание всех изменений в v0.3.0 |
-| [STATISTICS_v0.3.0.md](./docs/reports/STATISTICS_v0.3.0.md) | Статистика проекта и метрики |
-
-**👉 [Перейти в папку документации](./docs/README.md)** для полной навигации
-
-## �🚀 Быстрый старт
-
-### Frontend (Next.js)
-
-```bash
-# Установка зависимостей
-npm install
-
-# Запуск dev сервера
-npm run dev
-
-# Откройте http://localhost:3000 в браузере
-```
-
-### Backend (FastAPI, опционально)
-
-```bash
-cd backend
-
-# Создайте виртуальное окружение
-python -m venv venv
-source venv/bin/activate  # На Windows: venv\Scripts\activate
-
-# Установка зависимостей
-pip install -r requirements.txt
-
-# Запуск сервера
-python main.py
-
-# API доступен на http://localhost:8000
-# Документация: http://localhost:8000/docs
-```
-
-## 📁 Структура проекта
-
-```
-ThermoLabel/
-├── pages/              # Next.js страницы
-│   ├── index.js       # Главная компонента приложения
-│   └── _app.js        # App wrapper
-├── components/         # React компоненты (SOLID)
-│   ├── ToolPanel.js   # Левая панель с инструментами
-│   ├── AnnotationPanel.js  # Правая панель со списком
-│   ├── Analytics.js   # Вкладка аналитики
-│   ├── ClassManager.js # Управление классами
-│   └── Histogram.js   # Гистограмма температур
-├── lib/               # Бизнес-логика (сервисы)
-│   ├── services/      # Микросервисы (Single Responsibility)
-│   │   ├── paletteService.js    # Управление палитрами
-│   │   ├── temperatureService.js # Конверсия температур
-│   │   ├── geometryService.js   # Геометрические функции
-│   │   ├── imageService.js      # Загрузка/обработка изображений
-│   │   ├── exportService.js     # Экспорт в форматы
-│   │   ├── analyticsService.js  # Анализ данных
-│   │   └── historyService.js    # История изменений
-│   └── constants.js           # Константы приложения
-├── backend/           # Python FastAPI
-│   ├── main.py       # API endpoints
-│   └── requirements.txt
-├── public/           # Статические файлы
-└── package.json      # Зависимости
-```
-
-## 🏗️ Архитектура (SOLID принципы)
-
-### Single Responsibility Principle
-- Каждый сервис отвечает только за одну функцию:
-  - `paletteService` - работа с палитрами
-  - `temperatureService` - конверсия температур
-  - `geometryService` - геометрические расчеты
-  - `exportService` - экспорт в форматы
-  - `analyticsService` - анализ данных
-  - `imageService` - работа с изображениями
-
-### Open/Closed Principle
-- Сервисы легко расширяются без изменения существующего кода
-- Новые палитры, форматы, сервисы добавляются просто
-
-### Interface Segregation
-- Компоненты получают только нужные им props
-- Каждый компонент сфокусирован на своей задаче
-
-## 🎮 Управление
-
-### Инструменты
-- **Bounding Box** (▭): Рисуйте прямоугольники мышью
-- **Полигон** (⬡): Кликайте чтобы добавить точки, двойной клик чтобы закончить
-- **Порог** (⚡): Выберите температуру, нажмите "Применить авто"
-
-### Клавиши
-- **Undo (↩)**: Отменить последнее действие
-- **+/-**: Увеличить/уменьшить масштаб изображения
-- **Drag & Drop**: Загрузить изображение (JPEG, PNG, FLIR)
-
-### Экспорт данных
-- **YOLO**: Для обучения YOLOv8/v5
-- **COCO**: Стандартный формат для Computer Vision
-- **Pascal VOC**: Для Object Detection моделей
-- Все форматы включают температурные метаданные
-
-## 📊 Аналитика
-
-### Дашборд показывает:
-- Общее количество аннотаций и активных классов
-- Min/Max температуры во всем датасете
-- Распределение аннотаций по классам (бар-чарт)
-- Статистика температур для каждого класса
-- Scatter plot позиций всех аннотаций
-
-### Обнаружение аномалий:
-- Статистический анализ температурных данных
-- Выявление выбросов (Z-score > 2)
-- Рекомендации по проверке качества разметки
-
-## 🔄 История изменений
-
-- Полная история всех аннотаций
-- Undo/Redo функции
-- Сохранение в localStorage для сессии
-
-## 💾 Сохранение проекта
-
-Проект автоматически сохраняется в:
-- **localStorage** (браузер): для текущей сессии
-- **Экспорт**: YOLO/COCO/VOC для использования в ML pipeline
-
-## 🔌 API Endpoints (Backend)
-
-```
-GET  /api/health              - Проверка статуса сервера
-GET  /api/supported-formats   - Список поддерживаемых форматов
-POST /api/process-flir        - Обработка FLIR файлов
-POST /api/detect-anomalies    - Обнаружение аномалий в аннотациях
-POST /api/validate-annotations - Валидирование аннотаций
-POST /api/find-duplicates     - Поиск дубликатов
-```
-
-## 🎨 Вращающиеся палитры
-
-- **Iron** (по умолчанию): Классическая палитра рентгена/тепловидения
-- **Rainbow**: Спектр от синего к красному
-- **Grayscale**: Черно-белая
-- **Hotspot**: Подчеркивает горячие участки
-- **Arctic**: Инверсия для холодных объектов
-- **Viridis**: Перцептивно однородная палитра
-
-## 📈 Производительность
-
-Оптимизировано для:
-- VGA (640x480) - 120+ FPS
-- HD (1280x720) - 60+ FPS
-- 4K (3840x2160) - 30+ FPS
-
-## 🐳 Docker (в планах)
-
-```bash
-docker-compose up
-```
-
-## 🧪 Тестирование
-
-```bash
-# Запуск всех тестов с покрытием
-npm run test
-
-# Запуск тестов в watch режиме
-npm run test:watch
-
-# Запуск конкретных тестов
-npm run test:unit -- paletteService
-
-# Результат: 73+ тестов (34+ успешно)
-```
-
-**Покрытие**: Все сервисы и основная бизнес-логика
-
-## 📊 Статистика проекта
-
-- **Файлов кода**: 50+ (JavaScript, Python, CSS)
-- **Тестов**: 73+ (Jest)
-- **Строк кода**: 8,500+
-- **Документации**: 400+ страниц
-- **Покрытие**: Backend сервисы (100%), Frontend сервисы
-- **Performance**: VGA 120+ FPS, HD 60+ FPS, 4K 30+ FPS
-
-## 📝 Лицензия
-
-MIT License - смотри [LICENSE](./LICENSE)
-
-## 🤝 Способствование
-
-Приветствуются pull requests и issues!
-
-## 📚 Стек технологий
-
-- **Frontend**: Next.js 14, React 18, Canvas API
-- **Styling**: Inline styles (для минимума зависимостей)
-- **Backend**: FastAPI, Python
-- **Storage**: localStorage, IndexedDB (для больших датасетов в будущем)
+5. **Stop services**
+   ```bash
+   docker compose down
+   ```
 
 ---
 
-**Версия**: 0.3.0  
-**Статус**: ✅ Production Ready  
-**Последнее обновление**: 20 February 2026
+## Database Initialization
+
+### First Time Setup (Empty Database)
+
+Docker will automatically:
+1. Create the PostgreSQL database
+2. Initialize tables from `backend/init-db.sql`
+3. Load any data from `database-dump.sql` (if exists)
+
+### Restore from Existing Dump
+
+1. Export your database:
+   ```bash
+   pg_dump -U thermolabel_user -d thermolabel_db > database-dump.sql
+   ```
+
+2. Copy file to project root:
+   ```bash
+   cp database-dump.sql /path/to/ThermoLabel/
+   ```
+
+3. Start services:
+   ```bash
+   docker compose up -d
+   ```
+
+---
+
+## Backup & Restore
+
+### Create Backup
+
+```bash
+docker exec thermolabel-db pg_dump -U thermolabel_user -d thermolabel_db > backup.sql
+```
+
+### Restore Backup
+
+```bash
+docker exec -i thermolabel-db psql -U thermolabel_user -d thermolabel_db < backup.sql
+```
+
+---
+
+## Services
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| Frontend | 3000 | Next.js web application |
+| Backend | 8000 | FastAPI REST API |
+| Database | 5432 | PostgreSQL database |
+
+---
+
+## API Endpoints
+
+### Health & Info
+- `GET /api/health` - Health check
+- `GET /api/supported-formats` - Get supported file formats
+
+### Projects
+- `GET /api/projects` - List all projects
+- `GET /api/projects/{id}` - Get project details
+- `POST /api/projects` - Create/update project
+- `DELETE /api/projects/{id}` - Delete project
+
+### Settings
+- `GET /api/settings/classes` - Get class definitions
+- `PUT /api/settings/classes` - Update class definitions
+
+### Analysis
+- `POST /api/detect-anomalies` - Detect temperature anomalies
+- `POST /api/validate-annotations` - Validate annotations
+- `POST /api/process-flir` - Process FLIR thermal image
+
+---
+
+## Development
+
+### Run Tests
+
+```bash
+docker exec thermolabel-backend pytest tests/ -v --cov
+```
+
+### View Logs
+
+```bash
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f postgres
+```
+
+### Access Database
+
+```bash
+docker exec -it thermolabel-db psql -U thermolabel_user -d thermolabel_db
+```
+
+---
+
+## Project Structure
+
+```
+ThermoLabel/
+├── backend/
+│   ├── app/
+│   │   ├── api/              # API routes (Presentation Layer)
+│   │   ├── core/             # Config, database, exceptions
+│   │   ├── models/           # SQLAlchemy models
+│   │   ├── schemas/          # Pydantic schemas
+│   │   ├── services/         # Business logic
+│   │   ├── repositories/     # Data access layer
+│   │   └── __init__.py      # App factory
+│   ├── tests/                # Unit and integration tests
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── init-db.sql          # Database schema
+│   └── main.py              # Entrypoint
+├── frontend/
+│   ├── pages/                # Next.js pages
+│   ├── components/           # React components
+│   ├── lib/                  # Utilities
+│   └── Dockerfile.frontend
+├── docker-compose.yml        # Docker services
+├── database-dump.sql        # Database data (optional)
+└── README.md
+```
+
+---
+
+## Architecture
+
+### Backend (FastAPI + SOLID Principles)
+
+```
+Routes (API) → Services (Business Logic) → Repositories (Data Access) → Database
+```
+
+**SOLID Implementation:**
+- **Single Responsibility**: Each class has one reason to change
+- **Open/Closed**: Repositories are open for extension
+- **Liskov Substitution**: Base repository can be replaced by subclasses
+- **Interface Segregation**: Interfaces are specific to client needs
+- **Dependency Inversion**: Services depend on abstractions (repositories)
+
+### Database Schema
+
+- `projects` - Thermal image projects with annotations
+- `app_settings` - Application settings storage
+
+---
+
+## Environment Variables
+
+Backend uses environment from docker-compose.yml:
+
+```env
+DATABASE_URL=postgresql://thermolabel_user:thermolabel_password@postgres:5432/thermolabel_db
+DEBUG=false
+```
+
+---
+
+## Troubleshooting
+
+### Port Already in Use
+
+```bash
+# Change ports in docker-compose.yml
+# Or stop conflicting services:
+docker compose down
+```
+
+### Database Connection Issues
+
+```bash
+# Check database logs
+docker compose logs postgres
+
+# Test connection
+docker exec thermolabel-db pg_isready
+```
+
+### Container Exited
+
+```bash
+# View error logs
+docker compose logs backend
+docker compose logs frontend
+
+# Restart services
+docker compose restart
+```
+
+---
+
+## Performance Tips
+
+1. **Use PostgreSQL backups** for data preservation
+2. **Monitor resource usage**: `docker stats`
+3. **Enable production mode** by setting `NODE_ENV=production` in docker-compose.yml
+4. **Use named volumes** for database persistence
+
+---
+
+## License
+
+MIT License - See LICENSE file
+
+---
+
+## Support
+
+For issues and questions, please create an issue on GitHub:
+https://github.com/C0deRonin/ThermoLabel/issues
