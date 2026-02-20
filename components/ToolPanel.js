@@ -34,12 +34,12 @@ export default function ToolPanel({
     transition: "all 0.12s",
     borderColor: isActive ? color : cs.border,
     background: isActive ? color + "14" : "transparent",
-    color: isActive ? color : "#4a6880",
+    color: isActive ? color : cs.dim,
   });
 
   const labelStyle = {
     fontSize: 9,
-    color: "#2a4050",
+    color: cs.dim,
     letterSpacing: 2.5,
     display: "block",
     marginBottom: 8,
