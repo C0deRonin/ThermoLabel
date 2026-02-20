@@ -9,6 +9,7 @@ export default function AnnotationPanel({
   setSelAnn,
   setAnnotations,
   setUndoStack,
+  setRedoStack,
 }) {
   const cs = THEME_COLORS;
 
@@ -26,12 +27,15 @@ export default function AnnotationPanel({
   });
 
   const deleteAnnotation = (i) => {
+    setUndoStack((p) => [...p, annotations]);
+    setRedoStack([]);
     setAnnotations((as) => as.filter((_, ai) => ai !== i));
     if (selAnn === i) setSelAnn(null);
   };
 
   const clearAll = () => {
     setUndoStack((p) => [...p, annotations]);
+    setRedoStack([]);
     setAnnotations([]);
     setSelAnn(null);
   };

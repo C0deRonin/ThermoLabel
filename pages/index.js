@@ -67,6 +67,7 @@ export default function Home({ theme, onThemeChange }) {
   const [threshold, setThreshold] = useState(40);
   const [zoom, setZoom] = useState(1);
   const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
   const [polyPts, setPolyPts] = useState([]);
   const [mousePos, setMousePos] = useState(null);
   const [drawStart, setDrawStart] = useState(null);
@@ -124,7 +125,7 @@ export default function Home({ theme, onThemeChange }) {
   };
 
   // Create new project - clear all data
-  const handleNewProject = () => {
+  const handleNewProject = async () => {
     setCurrentProject(null);
     setAnnotations([]);
     setClasses(DEFAULT_CLASSES);
@@ -133,11 +134,32 @@ export default function Home({ theme, onThemeChange }) {
     setPalette('original');
     setPolyPts([]);
     setUndoStack([]);
+    setRedoStack([]);
     setImgName('thermal_demo.jpg');
     rawDataRef.current = generateThermalDemo(W, H);
     setLoaded(false);
     setTimeout(() => setLoaded(true), 10);
-    alert(`${t('project_created')}: ${t('new_project')}`);
+
+    const newProject = {
+      id: Date.now().toString(),
+      name: `${t('new_project')} ${new Date().toLocaleDateString()}`,
+      image_data: rawDataRef.current,
+      image_width: W,
+      image_height: H,
+      palette: "original",
+      annotations: [],
+      classes: DEFAULT_CLASSES,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const saveResult = await storageService.saveProject(newProject);
+    if (saveResult?.ok) {
+      setCurrentProject(newProject);
+      alert(`${t('project_created')}: ${newProject.name}`);
+    } else {
+      alert(`${t('project_created')}: ${t('new_project')}. ${t('error')}: save failed`);
+    }
   };
 
   // Load image with palette mode selection
@@ -443,6 +465,7 @@ export default function Home({ theme, onThemeChange }) {
   // Add annotation
   const addAnnotation = useCallback((ann) => {
     setUndoStack((p) => [...p, annotations]);
+    setRedoStack([]);
     setAnnotations((p) => [...p, ann]);
   }, [annotations]);
 
@@ -661,6 +684,7 @@ export default function Home({ theme, onThemeChange }) {
 
     if (newAnns.length) {
       setUndoStack((p) => [...p, annotations]);
+      setRedoStack([]);
       setAnnotations((p) => [...p, ...newAnns.slice(0, 25)]);
     }
   };
@@ -806,6 +830,7 @@ export default function Home({ theme, onThemeChange }) {
           <button
             onClick={() => {
               if (undoStack.length) {
+                setRedoStack((r) => [...r, annotations]);
                 setAnnotations(undoStack[undoStack.length - 1]);
                 setUndoStack((s) => s.slice(0, -1));
                 setSelAnn(null);
@@ -830,6 +855,35 @@ export default function Home({ theme, onThemeChange }) {
             title="Отменить"
           >
             ↩
+          </button>
+          <button
+            onClick={() => {
+              if (redoStack.length) {
+                setUndoStack((u) => [...u, annotations]);
+                setAnnotations(redoStack[redoStack.length - 1]);
+                setRedoStack((r) => r.slice(0, -1));
+                setSelAnn(null);
+              }
+            }}
+            disabled={!redoStack.length}
+            style={{
+              padding: "5px 9px",
+              border: "1px solid",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: 10,
+              borderRadius: 5,
+              transition: "all 0.12s",
+              borderColor: redoStack.length ? cs.accent : cs.border,
+              background: redoStack.length ? cs.accent + "14" : "transparent",
+              color: redoStack.length ? cs.accent : cs.dim,
+              opacity: redoStack.length ? 1 : 0.3,
+              fontSize: 12,
+              padding: "3px 7px",
+            }}
+            title="Вернуть ввод"
+          >
+            ↪
           </button>
           <button
             onClick={saveProject}
@@ -1198,6 +1252,7 @@ export default function Home({ theme, onThemeChange }) {
           setSelAnn={setSelAnn}
           setAnnotations={setAnnotations}
           setUndoStack={setUndoStack}
+          setRedoStack={setRedoStack}
         />
       </div>
     </div>

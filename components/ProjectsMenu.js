@@ -7,8 +7,10 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadProjects()
-  }, [])
+    if (showMenu) {
+      void loadProjects()
+    }
+  }, [showMenu])
 
   const loadProjects = async () => {
     setLoading(true)
@@ -48,7 +50,7 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
     <div className="projects-menu">
       <button
         className="projects-menu-button"
-        onClick={() => setShowMenu(!showMenu)}
+        onClick={() => setShowMenu((v) => !v)}
         title="Просмотреть сохранённые проекты"
       >
         📁 Проекты
@@ -60,9 +62,9 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
             <h3>Сохранённые проекты</h3>
             <button
               className="new-project-btn"
-              onClick={() => {
+              onClick={async () => {
                 setShowMenu(false)
-                if (onProjectCreate) onProjectCreate()
+                if (onProjectCreate) await onProjectCreate()
               }}
             >
               Создать новый проект

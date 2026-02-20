@@ -118,3 +118,6 @@ coverage/
 # Build output
 dist/
 build/
+
+# Local postgres bind mount data
+.docker/postgres-data/
