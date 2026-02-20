@@ -10,7 +10,7 @@ import {
   loadImageAsGrayscale,
   parseFlirData,
 } from "@/lib/services/imageService";
-import { applyPalette, getPalette } from "@/lib/services/paletteService";
+import { applyPalette } from "@/lib/services/paletteService";
 import {
   rawToTemp,
   tempToRaw,
@@ -95,7 +95,15 @@ export default function Home({ theme, onThemeChange }) {
       created_at: currentProject?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    storageService.saveProject(project);
+    const result = storageService.saveProject(project);
+    if (!result?.ok) {
+      if (result?.reason === "quota") {
+        alert("Не удалось сохранить проект: превышен лимит хранилища браузера");
+      } else {
+        alert("Не удалось сохранить проект");
+      }
+      return;
+    }
     setCurrentProject(project);
     alert(`${t('project_saved')}: ${project.name}`);
   }, [W, H, palette, annotations, classes, currentProject, t]);
@@ -223,7 +231,7 @@ export default function Home({ theme, onThemeChange }) {
     const c = canvasRef.current;
     if (!c || !rawDataRef.current) return;
     const ctx = c.getContext("2d");
-    const colored = applyPalette(rawDataRef.current, getPalette(palette));
+    const colored = applyPalette(rawDataRef.current, palette);
     const imgData = new ImageData(W, H);
     imgData.data.set(colored);
     ctx.putImageData(imgData, 0, 0);
@@ -775,7 +783,7 @@ export default function Home({ theme, onThemeChange }) {
                 transition: "all 0.12s",
                 borderColor: tab === t ? cs.accent : cs.border,
                 background: tab === t ? cs.accent + "14" : "transparent",
-                color: tab === t ? cs.accent : "#4a6880",
+                color: tab === t ? cs.accent : cs.dim,
                 letterSpacing: 1,
                 textTransform: "uppercase",
               }}
@@ -805,7 +813,7 @@ export default function Home({ theme, onThemeChange }) {
               transition: "all 0.12s",
               borderColor: undoStack.length ? cs.accent : cs.border,
               background: undoStack.length ? cs.accent + "14" : "transparent",
-              color: undoStack.length ? cs.accent : "#4a6880",
+              color: undoStack.length ? cs.accent : cs.dim,
               opacity: undoStack.length ? 1 : 0.3,
               fontSize: 12,
               padding: "3px 7px",
