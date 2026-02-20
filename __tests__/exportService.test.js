@@ -141,9 +141,9 @@ describe('exportService', () => {
       
       exportService.downloadFile(content, filename)
       
-      createElementSpy.restore()
-      appendChildSpy.restore()
-      removeChildSpy.restore()
+      createElementSpy.mockRestore?.()
+      appendChildSpy.mockRestore?.()
+      removeChildSpy.mockRestore?.()
     })
   })
 })

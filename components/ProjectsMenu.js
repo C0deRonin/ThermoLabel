@@ -10,23 +10,23 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
     loadProjects()
   }, [])
 
-  const loadProjects = () => {
+  const loadProjects = async () => {
     setLoading(true)
-    const savedProjects = storageService.getSavedProjectsList()
+    const savedProjects = await storageService.getSavedProjectsList()
     setProjects(savedProjects)
     setLoading(false)
   }
 
-  const handleDeleteProject = (projectId, e) => {
+  const handleDeleteProject = async (projectId, e) => {
     e.stopPropagation()
     if (confirm('Вы уверены, что хотите удалить этот проект?')) {
-      storageService.deleteProject(projectId)
-      loadProjects()
+      await storageService.deleteProject(projectId)
+      await loadProjects()
     }
   }
 
-  const handleOpenProject = (projectId) => {
-    const project = storageService.loadProject(projectId)
+  const handleOpenProject = async (projectId) => {
+    const project = await storageService.loadProject(projectId)
     if (project && onProjectOpen) {
       onProjectOpen(project)
     }
@@ -58,21 +58,21 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
         <div className="projects-dropdown">
           <div className="dropdown-content">
             <h3>Сохранённые проекты</h3>
+            <button
+              className="new-project-btn"
+              onClick={() => {
+                setShowMenu(false)
+                if (onProjectCreate) onProjectCreate()
+              }}
+            >
+              Создать новый проект
+            </button>
 
             {loading ? (
               <div className="loading">Загрузка...</div>
             ) : projects.length === 0 ? (
               <div className="empty-state">
                 <p>Нет сохранённых проектов</p>
-                <button
-                  className="new-project-btn"
-                  onClick={() => {
-                    setShowMenu(false)
-                    if (onProjectCreate) onProjectCreate()
-                  }}
-                >
-                  Создать новый проект
-                </button>
               </div>
             ) : (
               <ul className="projects-list">
@@ -80,7 +80,7 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
                   <li key={project.id} className="project-item">
                     <div
                       className="project-info"
-                      onClick={() => handleOpenProject(project.id)}
+                      onClick={() => void handleOpenProject(project.id)}
                     >
                       <div className="project-name">{project.name}</div>
                       <div className="project-date">
@@ -89,7 +89,7 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
                     </div>
                     <button
                       className="delete-btn"
-                      onClick={(e) => handleDeleteProject(project.id, e)}
+                      onClick={(e) => void handleDeleteProject(project.id, e)}
                       title="Удалить проект"
                     >
                       ✕
@@ -134,7 +134,7 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
         .projects-dropdown {
           position: absolute;
           top: 100%;
-          left: 0;
+          right: 0;
           margin-top: 8px;
           background: var(--color-surface);
           border: 1px solid var(--color-border);
