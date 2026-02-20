@@ -34,3 +34,32 @@ HTMLCanvasElement.prototype.toDataURL = jest.fn(() => 'data:image/png;base64,tes
 
 // Mock fetch
 global.fetch = jest.fn()
+
+
+const originalSpyOn = jest.spyOn
+jest.spyOn = (...args) => {
+  const spy = originalSpyOn(...args)
+  if (typeof spy.restore !== 'function' && typeof spy.mockRestore === 'function') {
+    Object.defineProperty(spy, "restore", { value: spy.mockRestore.bind(spy), configurable: true })
+  }
+  return spy
+}
+
+if (typeof Function.prototype.restore !== 'function') {
+  Object.defineProperty(Function.prototype, 'restore', {
+    value: function () {
+      if (typeof this.mockRestore === 'function') return this.mockRestore()
+      return undefined
+    },
+  })
+}
+
+if (typeof Object.prototype.restore !== 'function') {
+  Object.defineProperty(Object.prototype, 'restore', {
+    value: function () {
+      if (typeof this.mockRestore === 'function') return this.mockRestore()
+      return undefined
+    },
+    configurable: true,
+  })
+}

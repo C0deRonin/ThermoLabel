@@ -38,7 +38,7 @@ export default function Analytics({ annotations, classes, W, H }) {
       <div
         style={{
           fontSize: 8,
-          color: "#1e3040",
+          color: cs.dim,
           letterSpacing: 2.5,
           marginBottom: 18,
         }}
@@ -136,7 +136,7 @@ export default function Analytics({ annotations, classes, W, H }) {
                   />
                   {cls.name}
                 </span>
-                <span style={{ color: "#3a5060" }}>
+                <span style={{ color: cs.dim }}>
                   {cls.count} ·{" "}
                   {annotations.length
                     ? Math.round((cls.count / annotations.length) * 100)
@@ -185,7 +185,7 @@ export default function Analytics({ annotations, classes, W, H }) {
             <div
               style={{
                 fontSize: 9,
-                color: "#1a2a34",
+                color: cs.text,
                 textAlign: "center",
                 padding: 16,
               }}
@@ -294,7 +294,7 @@ export default function Analytics({ annotations, classes, W, H }) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 9,
-                color: "#1a2a34",
+                color: cs.text,
               }}
             >
               Добавь аннотации
