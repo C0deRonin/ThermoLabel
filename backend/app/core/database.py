@@ -8,15 +8,23 @@ from .config import settings
 # Create base class for models (MUST be created before importing models)
 Base = declarative_base()
 
-# Create engine
-engine = create_engine(
-    settings.DATABASE_URL,
-    echo=settings.SQLALCHEMY_ECHO,
-    pool_size=settings.SQLALCHEMY_POOL_SIZE,
-    max_overflow=10,
-    pool_recycle=settings.SQLALCHEMY_POOL_RECYCLE,
-    pool_pre_ping=settings.SQLALCHEMY_POOL_PRE_PING,
-)
+# Engine kwargs: SQLite does not support pool options
+_url = settings.DATABASE_URL
+if "sqlite" in _url:
+    engine = create_engine(
+        _url,
+        echo=settings.SQLALCHEMY_ECHO,
+        connect_args={"check_same_thread": False},
+    )
+else:
+    engine = create_engine(
+        _url,
+        echo=settings.SQLALCHEMY_ECHO,
+        pool_size=settings.SQLALCHEMY_POOL_SIZE,
+        max_overflow=10,
+        pool_recycle=settings.SQLALCHEMY_POOL_RECYCLE,
+        pool_pre_ping=settings.SQLALCHEMY_POOL_PRE_PING,
+    )
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
