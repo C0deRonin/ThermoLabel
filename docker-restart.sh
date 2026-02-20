@@ -26,10 +26,14 @@ stop_publishers_for_port() {
   local port="$1"
   local pids docker_ps
 
-  pids=$(lsof -t -i TCP:"$port" -sTCP:LISTEN 2>/dev/null || true)
-  if [ -n "$pids" ]; then
-    echo "  killing local pid(s) on :$port => $pids"
-    kill -9 $pids 2>/dev/null || true
+  if command -v lsof >/dev/null 2>&1; then
+    pids=$(lsof -t -i TCP:"$port" -sTCP:LISTEN 2>/dev/null || true)
+    if [ -n "$pids" ]; then
+      echo "  killing local pid(s) on :$port => $pids"
+      kill -9 $pids 2>/dev/null || true
+    fi
+  else
+    echo "  lsof not found, skipping host PID cleanup for :$port"
   fi
 
   docker_ps=$(docker ps --filter "publish=$port" --format '{{.ID}}')
