@@ -22,7 +22,7 @@ export default function AnnotationPanel({
     transition: "all 0.12s",
     borderColor: isActive ? color : cs.border,
     background: isActive ? color + "14" : "transparent",
-    color: isActive ? color : "#4a6880",
+    color: isActive ? color : cs.dim,
   });
 
   const deleteAnnotation = (i) => {
@@ -61,7 +61,7 @@ export default function AnnotationPanel({
           <div
             style={{
               fontSize: 9,
-              color: "#1a2a34",
+              color: cs.text,
               textAlign: "center",
               padding: "24px 0",
               lineHeight: 2.2,
@@ -104,7 +104,7 @@ export default function AnnotationPanel({
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#1e3040",
+                    color: cs.dim,
                     cursor: "pointer",
                     fontSize: 11,
                     padding: 0,
@@ -113,16 +113,16 @@ export default function AnnotationPanel({
                   ✕
                 </button>
               </div>
-              <div style={{ fontSize: 8, color: "#2a4050", lineHeight: 1.9 }}>
+              <div style={{ fontSize: 8, color: cs.dim, lineHeight: 1.9 }}>
                 <span style={{ color: cs.accent }}>
                   {ann.tempStats.mean.toFixed(1)}°
                 </span>
-                <span style={{ color: "#1e3040" }}> avg  </span>
+                <span style={{ color: cs.dim }}> avg  </span>
                 <span style={{ color: "#ff3030" }}>
                   {ann.tempStats.max.toFixed(1)}°
                 </span>
-                <span style={{ color: "#1e3040" }}> max</span>
-                <div style={{ color: "#1e3040" }}>
+                <span style={{ color: cs.dim }}> max</span>
+                <div style={{ color: cs.dim }}>
                   {Math.round(ann.w)}×{Math.round(ann.h)}px
                 </div>
               </div>
