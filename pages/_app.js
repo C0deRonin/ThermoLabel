@@ -33,6 +33,12 @@ export default function App({ Component, pageProps }) {
       --color-warning: ${themeObj.colors.warning};
     `
     root.style.cssText = cssVars
+    
+    // Add theme class to body for theme-specific styling
+    if (typeof document !== 'undefined') {
+      document.body.className = theme === 'light' ? 'light-theme' : 'dark-theme'
+    }
+    
     storageService.setTheme(theme)
   }, [theme, mounted])
 

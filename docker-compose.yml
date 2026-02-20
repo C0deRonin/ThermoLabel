@@ -56,9 +56,13 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    command: npm run dev
+    command: >
+      sh -c '
+      npm run dev
+      '
     networks:
       - thermolabel-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:

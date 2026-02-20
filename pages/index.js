@@ -115,6 +115,23 @@ export default function Home({ theme, onThemeChange }) {
     }
   };
 
+  // Create new project - clear all data
+  const handleNewProject = () => {
+    setCurrentProject(null);
+    setAnnotations([]);
+    setClasses(DEFAULT_CLASSES);
+    setSelClass(DEFAULT_CLASSES[0]);
+    setSelAnn(null);
+    setPalette('iron');
+    setPolyPts([]);
+    setUndoStack([]);
+    setImgName('thermal_demo.jpg');
+    rawDataRef.current = generateThermalDemo(W, H);
+    setLoaded(false);
+    setTimeout(() => setLoaded(true), 10);
+    alert(`${t('project_created')}: ${t('new_project')}`);
+  };
+
   // Load image with palette mode selection
   const handleImageLoad = (imageData) => {
     rawDataRef.current = imageData.data;
@@ -648,11 +665,13 @@ export default function Home({ theme, onThemeChange }) {
       style={{
         fontFamily: "'JetBrains Mono','Courier New',monospace",
         background: cs.bg,
-        minHeight: "100vh",
+        height: "100vh",
+        width: "100vw",
         color: cs.text,
         display: "flex",
         flexDirection: "column",
         userSelect: "none",
+        overflow: "hidden",
       }}
     >
       {/* Header */}
@@ -870,6 +889,7 @@ export default function Home({ theme, onThemeChange }) {
           </button>
           <ProjectsMenu 
             onProjectOpen={handleProjectOpen}
+            onProjectCreate={handleNewProject}
           />
           <button
             onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
