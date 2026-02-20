@@ -31,7 +31,7 @@ export default function ClassManager({
     transition: "all 0.12s",
     borderColor: isActive ? color : cs.border,
     background: isActive ? color + "14" : "transparent",
-    color: isActive ? color : "#4a6880",
+    color: isActive ? color : cs.dim,
   });
 
   return (
@@ -79,7 +79,7 @@ export default function ClassManager({
             <span style={{ color: cs.dim, fontSize: 9 }}>
               {cls.tempMin}°…{cls.tempMax}°
             </span>
-            <span style={{ color: "#1e3040", fontSize: 9 }}>
+            <span style={{ color: cs.dim, fontSize: 9 }}>
               {annotations.filter((a) => a.cls.id === cls.id).length} ann
             </span>
             {classes.length > 1 && (

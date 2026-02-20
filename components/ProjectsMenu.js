@@ -58,21 +58,21 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
         <div className="projects-dropdown">
           <div className="dropdown-content">
             <h3>Сохранённые проекты</h3>
+            <button
+              className="new-project-btn"
+              onClick={() => {
+                setShowMenu(false)
+                if (onProjectCreate) onProjectCreate()
+              }}
+            >
+              Создать новый проект
+            </button>
 
             {loading ? (
               <div className="loading">Загрузка...</div>
             ) : projects.length === 0 ? (
               <div className="empty-state">
                 <p>Нет сохранённых проектов</p>
-                <button
-                  className="new-project-btn"
-                  onClick={() => {
-                    setShowMenu(false)
-                    if (onProjectCreate) onProjectCreate()
-                  }}
-                >
-                  Создать новый проект
-                </button>
               </div>
             ) : (
               <ul className="projects-list">

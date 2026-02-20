@@ -1,87 +1,64 @@
 #!/bin/bash
-# docker-restart.sh - Скрипт для перезапуска Docker контейнеров
+# docker-restart.sh - Перезапуск Docker контейнеров ThermoLabel c освобождением порта 3000
 
-set -e
+set -euo pipefail
 
-echo "🐳 ThermoLabel Docker Manager"
-echo "═══════════════════════════════════════════════════"
-echo ""
-
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Check if docker and docker-compose installed
-if ! command -v docker &> /dev/null; then
-    echo -e "${RED}❌ Docker is not installed${NC}"
-    exit 1
+if ! command -v docker >/dev/null 2>&1; then
+  echo -e "${RED}❌ Docker не установлен${NC}"
+  exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
-    echo -e "${RED}❌ Docker Compose is not installed${NC}"
-    exit 1
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_CMD=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_CMD=(docker-compose)
+else
+  echo -e "${RED}❌ Docker Compose не установлен${NC}"
+  exit 1
 fi
 
-# Stop existing containers
-echo -e "${YELLOW}⏹️  Stopping existing containers...${NC}"
-docker-compose down --remove-orphans 2>/dev/null || true
+stop_publishers_for_port() {
+  local port="$1"
+  local pids docker_ps
 
-# Kill any processes on the ports
-echo -e "${YELLOW}🔒 Freeing ports 3000, 8000, 5432...${NC}"
+  pids=$(lsof -t -i TCP:"$port" -sTCP:LISTEN 2>/dev/null || true)
+  if [ -n "$pids" ]; then
+    echo "  killing local pid(s) on :$port => $pids"
+    kill -9 $pids 2>/dev/null || true
+  fi
 
-# Kill processes on port 3000
-if lsof -i :3000 > /dev/null 2>&1; then
-    echo -e "  Killing process on port 3000..."
-    kill -9 $(lsof -t -i :3000) 2>/dev/null || true
-fi
+  docker_ps=$(docker ps --filter "publish=$port" --format '{{.ID}}')
+  if [ -n "$docker_ps" ]; then
+    echo "  stopping docker container(s) publishing :$port => $docker_ps"
+    docker stop $docker_ps >/dev/null 2>&1 || true
+    docker rm -f $docker_ps >/dev/null 2>&1 || true
+  fi
+}
 
-# Kill processes on port 8000
-if lsof -i :8000 > /dev/null 2>&1; then
-    echo -e "  Killing process on port 8000..."
-    kill -9 $(lsof -t -i :8000) 2>/dev/null || true
-fi
+echo -e "${YELLOW}⏹️ Остановка текущих контейнеров проекта...${NC}"
+"${COMPOSE_CMD[@]}" down --remove-orphans 2>/dev/null || true
 
-# Kill processes on port 5432
-if lsof -i :5432 > /dev/null 2>&1; then
-    echo -e "  Killing process on port 5432..."
-    kill -9 $(lsof -t -i :5432) 2>/dev/null || true
-fi
+echo -e "${YELLOW}🧹 Освобождение портов 3000/8000/5432...${NC}"
+for port in 3000 8000 5432; do
+  stop_publishers_for_port "$port"
+done
 
-# Wait a moment
 sleep 2
 
-# Build and start containers
-echo ""
-echo -e "${YELLOW}🚀 Starting containers...${NC}"
-docker-compose up --build -d
+echo -e "${YELLOW}🚀 Запуск проекта на порту 3000...${NC}"
+if ! "${COMPOSE_CMD[@]}" up --build -d --force-recreate; then
+  echo -e "${YELLOW}⚠️ Первый запуск не удался, повторно освобождаем порт 3000 и перезапускаем...${NC}"
+  stop_publishers_for_port 3000
+  sleep 2
+  "${COMPOSE_CMD[@]}" up --build -d --force-recreate
+fi
 
-# Wait for services to be ready
-echo ""
-echo -e "${YELLOW}⏳ Waiting for services to be ready...${NC}"
-sleep 10
+echo -e "${GREEN}✅ Статус контейнеров:${NC}"
+"${COMPOSE_CMD[@]}" ps
 
-# Check if containers are running
-echo ""
-echo -e "${GREEN}✅ Checking container status...${NC}"
-docker-compose ps
-
-echo ""
-echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}✅ Services Started Successfully!${NC}"
-echo ""
-echo -e "Frontend:   ${GREEN}http://localhost:3000${NC}"
-echo -e "Backend API: ${GREEN}http://localhost:8000${NC}"
-echo -e "API Docs:    ${GREEN}http://localhost:8000/docs${NC}"
-echo -e "Database:    ${GREEN}postgresql://localhost:5432${NC}"
-echo ""
-echo -e "${YELLOW}To view logs:${NC}"
-echo "  docker-compose logs -f frontend"
-echo "  docker-compose logs -f backend"
-echo "  docker-compose logs -f postgres"
-echo ""
-echo -e "${YELLOW}To stop containers:${NC}"
-echo "  docker-compose down"
-echo ""
-echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
+echo -e "\n${GREEN}Frontend: http://localhost:3000${NC}"
