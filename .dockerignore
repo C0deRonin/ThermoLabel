@@ -1,0 +1,9 @@
+# Prevent Postgres bind-mount data from being sent as Docker build context.
+# This avoids permission errors after the DB container changes ownership.
+.docker/postgres-data
+.docker/postgres-data/**
+
+# Keep build context small
+.git
+node_modules
+coverage

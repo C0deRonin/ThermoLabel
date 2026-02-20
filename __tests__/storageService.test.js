@@ -13,7 +13,7 @@ jest.mock("@/lib/services/apiService", () => ({
   },
 }));
 
-describe("storageService.saveProject", () => {
+describe("storageService with postgres-only project persistence", () => {
   const project = {
     id: "p-1",
     name: "P1",
@@ -32,56 +32,36 @@ describe("storageService.saveProject", () => {
     localStorage.clear();
   });
 
-  it("returns ok=true when API save succeeds even if local cache write fails", async () => {
+  it("saveProject returns api error when backend save fails", async () => {
+    apiService.saveProject.mockRejectedValue(new Error("backend down"));
+
+    const result = await storageService.saveProject(project);
+
+    expect(result).toEqual({ ok: false, reason: "backend down" });
+  });
+
+  it("loadProject returns null when backend is unavailable", async () => {
+    apiService.getProject.mockRejectedValue(new Error("network"));
+
+    const result = await storageService.loadProject("p-1");
+
+    expect(result).toBeNull();
+  });
+
+  it("getSavedProjectsList returns [] when backend is unavailable", async () => {
+    apiService.getProjects.mockRejectedValue(new Error("network"));
+
+    const result = await storageService.getSavedProjectsList();
+
+    expect(result).toEqual([]);
+  });
+
+  it("saveProject does not persist project payload into localStorage fallback keys", async () => {
     apiService.saveProject.mockResolvedValue({ ok: true });
 
-    const setItemSpy = jest.spyOn(Storage.prototype, "setItem");
-    setItemSpy.mockImplementation(() => {
-      throw new Error("QuotaExceededError");
-    });
+    await storageService.saveProject(project);
 
-    const result = await storageService.saveProject(project);
-
-    expect(result.ok).toBe(true);
-    expect(result.source).toBe("api");
-
-    setItemSpy.mockRestore?.();
-  });
-
-  it("returns quota reason when API save fails and local save hits quota", async () => {
-    apiService.saveProject.mockRejectedValue(new Error("backend down"));
-
-    const setItemSpy = jest.spyOn(Storage.prototype, "setItem");
-    setItemSpy.mockImplementation(() => {
-      const err = new Error("storage quota exceeded");
-      err.name = "QuotaExceededError";
-      throw err;
-    });
-
-    const result = await storageService.saveProject(project);
-
-    expect(result).toEqual({ ok: false, reason: "quota" });
-
-    setItemSpy.mockRestore?.();
-  });
-
-  it("falls back to metadata-only local save when full local project save fails", async () => {
-    apiService.saveProject.mockRejectedValue(new Error("backend down"));
-
-    const setItemSpy = jest.spyOn(Storage.prototype, "setItem");
-    setItemSpy
-      .mockImplementationOnce(() => {
-        const err = new Error("storage quota exceeded");
-        err.name = "QuotaExceededError";
-        throw err;
-      })
-      .mockImplementation(() => {});
-
-    const result = await storageService.saveProject(project);
-
-    expect(result.ok).toBe(true);
-    expect(result.source).toBe("local-meta");
-
-    setItemSpy.mockRestore?.();
+    expect(localStorage.getItem("thermolabel:project:p-1")).toBeNull();
+    expect(localStorage.getItem("thermolabel:projects:list")).toBeNull();
   });
 });
