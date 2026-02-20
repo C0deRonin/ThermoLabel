@@ -50,10 +50,10 @@ export default function Home({ theme, onThemeChange }) {
   const historyRef = useRef(new HistoryManager());
 
   // State
-  const [W, setW] = useState(640);
-  const [H, setH] = useState(480);
+  const [W, setW] = useState(1280);
+  const [H, setH] = useState(720);
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
-  const [palette, setPalette] = useState("iron");
+  const [palette, setPalette] = useState("original");
   const [tool, setTool] = useState(TOOLS.bbox);
   const [annotations, setAnnotations] = useState([]);
   const [classes, setClasses] = useState(DEFAULT_CLASSES);
@@ -106,7 +106,7 @@ export default function Home({ theme, onThemeChange }) {
       rawDataRef.current = project.image_data;
       setW(project.image_width || 640);
       setH(project.image_height || 480);
-      setPalette(project.palette || 'iron');
+      setPalette(project.palette || 'original');
       setAnnotations(project.annotations || []);
       setClasses(project.classes || DEFAULT_CLASSES);
       setCurrentProject(project);
@@ -122,7 +122,7 @@ export default function Home({ theme, onThemeChange }) {
     setClasses(DEFAULT_CLASSES);
     setSelClass(DEFAULT_CLASSES[0]);
     setSelAnn(null);
-    setPalette('iron');
+    setPalette('original');
     setPolyPts([]);
     setUndoStack([]);
     setImgName('thermal_demo.jpg');
@@ -146,8 +146,7 @@ export default function Home({ theme, onThemeChange }) {
       // Image was already converted to grayscale
       setPalette('iron');
     } else {
-      // Keep as is for non-palette
-      setPalette('grayscale');
+      setPalette('original');
     }
   };
 
@@ -170,6 +169,11 @@ export default function Home({ theme, onThemeChange }) {
         content = exportPascalVOC(annotations, W, H, classes);
         filename = `pascal_voc_${ts}.xml`;
         mime = 'application/xml';
+      }
+
+      if (!rawDataRef.current?.length || annotations.length === 0) {
+        alert('Нельзя скачать: отсутствует изображение или аннотации');
+        return;
       }
 
       if (content) {
@@ -206,7 +210,11 @@ export default function Home({ theme, onThemeChange }) {
     storageService.setPalette(palette);
   }, [palette]);
   useEffect(() => {
-    rawDataRef.current = generateThermalDemo(W, H);
+    const initialW = Math.max(960, Math.min(1600, Math.floor(window.innerWidth * 0.65)));
+    const initialH = Math.max(540, Math.min(1000, Math.floor(window.innerHeight * 0.75)));
+    setW(initialW);
+    setH(initialH);
+    rawDataRef.current = generateThermalDemo(initialW, initialH);
     setLoaded(true);
   }, []);
 
@@ -401,6 +409,13 @@ export default function Home({ theme, onThemeChange }) {
   useEffect(() => {
     renderOverlay();
   }, [renderOverlay]);
+
+  useEffect(() => {
+    if (loaded && tab === TABS.ANNOTATE) {
+      renderImage();
+      requestAnimationFrame(renderOverlay);
+    }
+  }, [tab, loaded, renderImage, renderOverlay]);
 
   // Get mouse position
   const getPos = useCallback(
@@ -716,7 +731,7 @@ export default function Home({ theme, onThemeChange }) {
             <div
               style={{
                 fontSize: 8,
-                color: "#1e3040",
+                color: cs.dim,
                 letterSpacing: 2.5,
               }}
             >
@@ -726,12 +741,12 @@ export default function Home({ theme, onThemeChange }) {
           <div
             style={{ width: 1, height: 24, background: cs.border, margin: "0 4px" }}
           />
-          <span style={{ fontSize: 9, color: "#2a4050" }}>{imgName}</span>
+          <span style={{ fontSize: 9, color: cs.dim }}>{imgName}</span>
           <span
             style={{
               fontSize: 8,
-              color: "#1e3040",
-              background: "#111820",
+              color: cs.dim,
+              background: cs.surface || cs.panel,
               padding: "2px 6px",
               borderRadius: 4,
               border: `1px solid ${cs.border}`,
@@ -811,7 +826,7 @@ export default function Home({ theme, onThemeChange }) {
               transition: "all 0.12s",
               borderColor: cs.border,
               background: "transparent",
-              color: "#4a6880",
+              color: cs.dim,
               borderColor: "#00cc66",
               background: "#00cc6614",
               color: "#00cc66",
@@ -831,7 +846,7 @@ export default function Home({ theme, onThemeChange }) {
               transition: "all 0.12s",
               borderColor: cs.border,
               background: "transparent",
-              color: "#4a6880",
+              color: cs.dim,
             }}
           >
             ↓ YOLO
@@ -848,7 +863,7 @@ export default function Home({ theme, onThemeChange }) {
               transition: "all 0.12s",
               borderColor: cs.border,
               background: "transparent",
-              color: "#4a6880",
+              color: cs.dim,
             }}
           >
             ↓ COCO
@@ -865,7 +880,7 @@ export default function Home({ theme, onThemeChange }) {
               transition: "all 0.12s",
               borderColor: cs.border,
               background: "transparent",
-              color: "#4a6880",
+              color: cs.dim,
             }}
           >
             ↓ Pascal VOC
@@ -903,7 +918,7 @@ export default function Home({ theme, onThemeChange }) {
               transition: "all 0.12s",
               borderColor: cs.border,
               background: "transparent",
-              color: "#4a6880",
+              color: cs.dim,
             }}
             title={t('theme')}
           >
@@ -921,7 +936,7 @@ export default function Home({ theme, onThemeChange }) {
               borderRadius: 5,
               borderColor: cs.border,
               background: "transparent",
-              color: "#4a6880",
+              color: cs.dim,
             }}
           >
             <option value="ru">RU</option>
@@ -1042,14 +1057,14 @@ export default function Home({ theme, onThemeChange }) {
                   display: "flex",
                   gap: 8,
                   alignItems: "center",
-                  background: "#0d111799",
+                  background: "color-mix(in srgb, var(--color-surface) 85%, transparent)",
                   backdropFilter: "blur(8px)",
                   borderRadius: 8,
                   padding: "5px 14px",
                   border: `1px solid ${cs.border}`,
                 }}
               >
-                <span style={{ fontSize: 9, color: "#1e3040" }}>
+                <span style={{ fontSize: 9, color: cs.dim }}>
                   {annotations.length} аннотаций
                 </span>
                 <div
@@ -1071,7 +1086,7 @@ export default function Home({ theme, onThemeChange }) {
                     transition: "all 0.12s",
                     borderColor: cs.border,
                     background: "transparent",
-                    color: "#4a6880",
+                    color: cs.dim,
                   }}
                 >
                   +
@@ -1102,7 +1117,7 @@ export default function Home({ theme, onThemeChange }) {
                     transition: "all 0.12s",
                     borderColor: cs.border,
                     background: "transparent",
-                    color: "#4a6880",
+                    color: cs.dim,
                   }}
                 >
                   -
