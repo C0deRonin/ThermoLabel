@@ -82,7 +82,7 @@ export default function Home({ theme, onThemeChange }) {
   const t = useCallback((key) => translations[language]?.[key] ?? key, [language]);
 
   // Save project functionality
-  const saveProject = useCallback(() => {
+  const saveProject = useCallback(async () => {
     const project = {
       id: currentProject?.id || Date.now().toString(),
       name: currentProject?.name || `Проект ${new Date().toLocaleDateString()}`,
@@ -95,7 +95,7 @@ export default function Home({ theme, onThemeChange }) {
       created_at: currentProject?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    const result = storageService.saveProject(project);
+    const result = await storageService.saveProject(project);
     if (!result?.ok) {
       if (result?.reason === "quota") {
         alert("Не удалось сохранить проект: превышен лимит хранилища браузера");
@@ -196,22 +196,23 @@ export default function Home({ theme, onThemeChange }) {
 
   // Load persisted state on mount
   useEffect(() => {
-    const savedClasses = storageService.getClasses();
-    const savedPalette = storageService.getPalette();
-    const savedAnalytics = storageService.getAnalytics();
+    (async () => {
+      const savedClasses = await storageService.getClasses();
+      const savedPalette = storageService.getPalette();
 
-    if (savedClasses.length > 0) {
-      setClasses(savedClasses);
-      setSelClass(savedClasses[0]);
-    }
-    if (savedPalette) {
-      setPalette(savedPalette);
-    }
+      if (savedClasses.length > 0) {
+        setClasses(savedClasses);
+        setSelClass(savedClasses[0]);
+      }
+      if (savedPalette) {
+        setPalette(savedPalette);
+      }
+    })();
   }, []);
 
   // Save state on changes
   useEffect(() => {
-    storageService.setClasses(classes);
+    void storageService.setClasses(classes);
   }, [classes]);
 
   useEffect(() => {
@@ -677,6 +678,14 @@ export default function Home({ theme, onThemeChange }) {
 
   // Styles
   const cs = THEME_COLORS;
+
+  const handleCanvasWheel = useCallback((e) => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.1 : -0.1;
+    setZoom((z) => Math.max(0.4, Math.min(2.5, +(z + delta).toFixed(2))));
+  }, []);
+
   const canvasS = {
     display: "block",
     maxWidth: "100%",
@@ -1005,6 +1014,7 @@ export default function Home({ theme, onThemeChange }) {
           {tab === TABS.ANNOTATE && (
             <>
               <div
+                onWheel={handleCanvasWheel}
                 style={{
                   position: "relative",
                   borderRadius: 5,

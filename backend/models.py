@@ -20,6 +20,8 @@ class Project(Base):
     image_width = Column(Integer, nullable=True)
     image_height = Column(Integer, nullable=True)
     palette = Column(String(50), default='iron')
+    annotations_data = Column(JSON, nullable=True)
+    classes_data = Column(JSON, nullable=True)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -194,3 +196,15 @@ class ExportLog(Base):
             'error_message': self.error_message,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class AppSetting(Base):
+    """Ключ-значение для глобальных настроек приложения"""
+    __tablename__ = "app_settings"
+
+    key = Column(String(255), primary_key=True)
+    value = Column(JSON, nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    def to_dict(self):
+        return {"key": self.key, "value": self.value}
