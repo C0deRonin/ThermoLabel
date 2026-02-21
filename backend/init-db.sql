@@ -21,11 +21,21 @@ CREATE TABLE IF NOT EXISTS app_settings (
     value JSON DEFAULT '[]'::json
 );
 
+CREATE TABLE IF NOT EXISTS project_exports (
+    project_id VARCHAR NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    format VARCHAR(20) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+    PRIMARY KEY (project_id, format)
+);
+
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_projects_updated_at ON projects(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_app_settings_key ON app_settings(key);
+CREATE INDEX IF NOT EXISTS idx_project_exports_project_id ON project_exports(project_id);
 
 -- Add comment
 COMMENT ON TABLE projects IS 'Thermal image projects with annotations';
 COMMENT ON TABLE app_settings IS 'Application settings storage';
+COMMENT ON TABLE project_exports IS 'YOLO/COCO/Pascal VOC exports per project';

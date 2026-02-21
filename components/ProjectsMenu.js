@@ -5,6 +5,7 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
   const [projects, setProjects] = useState([])
   const [showMenu, setShowMenu] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
 
   useEffect(() => {
     if (showMenu) {
@@ -14,9 +15,16 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
 
   const loadProjects = async () => {
     setLoading(true)
-    const savedProjects = await storageService.getSavedProjectsList()
-    setProjects(savedProjects)
-    setLoading(false)
+    setLoadError(null)
+    try {
+      const savedProjects = await storageService.getSavedProjectsList()
+      setProjects(Array.isArray(savedProjects) ? savedProjects : [])
+    } catch (e) {
+      setLoadError(e?.message || 'Ошибка загрузки')
+      setProjects([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleDeleteProject = async (projectId, e) => {
@@ -72,9 +80,17 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
 
             {loading ? (
               <div className="loading">Загрузка...</div>
+            ) : loadError ? (
+              <div className="empty-state">
+                <p>{loadError}</p>
+                <button type="button" className="retry-btn" onClick={() => void loadProjects()}>
+                  Повторить
+                </button>
+              </div>
             ) : projects.length === 0 ? (
               <div className="empty-state">
                 <p>Нет сохранённых проектов</p>
+                <p className="empty-state-hint">Список загружен из БД. Сохраните проект или импортируйте дамп.</p>
               </div>
             ) : (
               <ul className="projects-list">
@@ -177,6 +193,12 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
           gap: 12px;
         }
 
+        .empty-state-hint {
+          font-size: 11px;
+          opacity: 0.8;
+          margin-top: 4px;
+        }
+
         .new-project-btn {
           background: var(--color-primary);
           color: white;
@@ -190,6 +212,21 @@ const ProjectsMenu = ({ onProjectOpen, onProjectCreate }) => {
 
         .new-project-btn:hover {
           opacity: 0.9;
+        }
+
+        .retry-btn {
+          margin-top: 8px;
+          padding: 6px 12px;
+          font-size: 12px;
+          cursor: pointer;
+          background: var(--color-surface2);
+          color: var(--color-text);
+          border: 1px solid var(--color-border);
+          border-radius: 3px;
+        }
+
+        .retry-btn:hover {
+          background: var(--color-border);
         }
 
         .projects-list {

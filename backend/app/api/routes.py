@@ -2,13 +2,14 @@
 """API routes - Presentation Layer with Dependency Injection"""
 from pathlib import Path
 from typing import Any, List
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, File, UploadFile, Form, HTTPException, Depends, Query, Body
+from fastapi.responses import StreamingResponse, Response
 from sqlalchemy.orm import Session
 import numpy as np
 
 from app.core import get_db
 from app.core.exceptions import ProjectNotFoundError, ValidationError
+from app.models import ProjectExport
 from app.schemas import ProjectCreate, SettingsUpdate
 from app.services import ProjectService, SettingsService
 from app.services.db_dump import export_dump_sql, import_dump_sql, import_dump_custom
@@ -20,7 +21,7 @@ router = APIRouter(prefix="/api", tags=["api"])
 @router.get("/health")
 async def health():
     """Health check endpoint"""
-    return {"status": "ok", "version": "0.4.0"}
+    return {"status": "ok", "version": "1.0.0"}
 
 
 # Project endpoints
@@ -68,6 +69,81 @@ def delete_project(project_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=e.message)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Project exports (YOLO / COCO / Pascal VOC) — сохранение и скачивание из БД
+VALID_EXPORT_FORMATS = {"yolo", "coco", "voc"}
+
+
+@router.get("/projects/{project_id}/exports")
+def list_project_exports(project_id: str, db: Session = Depends(get_db)):
+    """Список сохранённых в БД экспортов проекта (формат и дата)."""
+    try:
+        ProjectService(db).get_project(project_id)
+    except ProjectNotFoundError:
+        raise HTTPException(status_code=404, detail="Project not found")
+    rows = db.query(ProjectExport).filter(ProjectExport.project_id == project_id).all()
+    return [
+        {"format": r.format, "created_at": r.created_at.isoformat() if r.created_at else None}
+        for r in rows
+    ]
+
+
+@router.post("/projects/{project_id}/exports")
+def save_project_export(
+    project_id: str,
+    payload: dict = Body(...),
+    db: Session = Depends(get_db),
+):
+    """Save YOLO/COCO/VOC export for a project. Body: { \"format\": \"yolo\"|\"coco\"|\"voc\", \"content\": \"...\" }"""
+    try:
+        ProjectService(db).get_project(project_id)
+    except ProjectNotFoundError:
+        raise HTTPException(status_code=404, detail="Project not found")
+    fmt = (payload.get("format") or "").strip().lower()
+    if fmt not in VALID_EXPORT_FORMATS:
+        raise HTTPException(status_code=400, detail="format must be one of: yolo, coco, voc")
+    content = payload.get("content")
+    if content is None:
+        raise HTTPException(status_code=400, detail="content is required")
+    if not isinstance(content, str):
+        content = str(content)
+    row = db.query(ProjectExport).filter(
+        ProjectExport.project_id == project_id,
+        ProjectExport.format == fmt,
+    ).first()
+    if row:
+        row.content = content
+    else:
+        db.add(ProjectExport(project_id=project_id, format=fmt, content=content))
+    db.commit()
+    return {"ok": True, "format": fmt}
+
+
+@router.get("/projects/{project_id}/exports/{format}")
+def get_project_export(
+    project_id: str,
+    format: str,
+    db: Session = Depends(get_db),
+):
+    """Download stored YOLO/COCO/VOC export for a project."""
+    fmt = (format or "").strip().lower()
+    if fmt not in VALID_EXPORT_FORMATS:
+        raise HTTPException(status_code=400, detail="format must be one of: yolo, coco, voc")
+    row = db.query(ProjectExport).filter(
+        ProjectExport.project_id == project_id,
+        ProjectExport.format == fmt,
+    ).first()
+    if not row or not row.content:
+        raise HTTPException(status_code=404, detail="Export not found")
+    media_types = {"yolo": "text/plain", "coco": "application/json", "voc": "application/xml"}
+    ext = {"yolo": "txt", "coco": "json", "voc": "xml"}
+    filename = f"export_{project_id}_{fmt}.{ext[fmt]}"
+    return Response(
+        content=row.content,
+        media_type=media_types[fmt],
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # Settings endpoints
@@ -197,10 +273,10 @@ async def validate_annotations(data: dict):
 
 # Database dump export/import
 @router.get("/db/export")
-async def db_export():
-    """Export database as SQL dump file."""
+async def db_export(data_only: bool = Query(False, description="Only data (for merging dumps)")):
+    """Export database as SQL dump file. data_only=True — только данные, для слияния дампов."""
     try:
-        content, filename = export_dump_sql()
+        content, filename = export_dump_sql(data_only=data_only)
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
     return StreamingResponse(
@@ -214,20 +290,23 @@ async def db_export():
 
 
 @router.post("/db/import")
-async def db_import(file: UploadFile = File(...)):
-    """Import database from SQL or custom-format (.dump) file."""
+async def db_import(
+    file: UploadFile = File(...),
+    clear_before: str = Form("false"),
+):
+    """Import database from SQL or .dump. clear_before=true — очистить таблицы перед импортом (для полного дампа)."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
     ext = (Path(file.filename).suffix or "").lower()
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="File is empty")
+    clear = clear_before.strip().lower() in ("true", "1", "on", "yes")
     try:
         if ext == ".dump":
             msg = import_dump_custom(content)
         else:
-            # .sql or any other: treat as SQL
-            msg = import_dump_sql(content)
+            msg = import_dump_sql(content, clear_before_import=clear)
         return {"ok": True, "message": msg}
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))

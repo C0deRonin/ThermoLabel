@@ -48,12 +48,10 @@ describe("storageService with postgres-only project persistence", () => {
     expect(result).toBeNull();
   });
 
-  it("getSavedProjectsList returns [] when backend is unavailable", async () => {
+  it("getSavedProjectsList throws when backend is unavailable", async () => {
     apiService.getProjects.mockRejectedValue(new Error("network"));
 
-    const result = await storageService.getSavedProjectsList();
-
-    expect(result).toEqual([]);
+    await expect(storageService.getSavedProjectsList()).rejects.toThrow("network");
   });
 
   it("saveProject does not persist project payload into localStorage fallback keys", async () => {
