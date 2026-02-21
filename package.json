@@ -1,6 +1,6 @@
 {
   "name": "thermolabel",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Web application for thermal image annotation with built-in dataset analytics",
   "scripts": {
     "dev": "next dev",

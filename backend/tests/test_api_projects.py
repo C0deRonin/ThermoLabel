@@ -8,7 +8,7 @@ def test_health_check(client):
     """Test health endpoint"""
     response = client.get("/api/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "version": "0.4.0"}
+    assert response.json() == {"status": "ok", "version": "1.0.0"}
 
 
 def test_list_projects_empty(client):

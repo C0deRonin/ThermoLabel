@@ -32,6 +32,7 @@ import {
   getDatasetStatistics,
 } from "@/lib/services/analyticsService";
 import storageService from "@/lib/services/storageService";
+import apiService from "@/lib/services/apiService";
 import { translations, DEFAULT_LANGUAGE } from "@/lib/i18n";
 import ToolPanel from "@/components/ToolPanel";
 import AnnotationPanel from "@/components/AnnotationPanel";
@@ -80,15 +81,23 @@ export default function Home({ theme, onThemeChange }) {
   const [showImageModal, setShowImageModal] = useState(false);
   const [showDumpModal, setShowDumpModal] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
+  const [projectName, setProjectName] = useState("");
+  const [editingProjectName, setEditingProjectName] = useState(false);
+  const [savedExportFormats, setSavedExportFormats] = useState([]);
+  const projectNameInputRef = useRef(null);
+
+  const unsavedRef = useRef(false);
+  const justLoadedRef = useRef(false);
 
   // Helper function for translations
   const t = useCallback((key) => translations[language]?.[key] ?? key, [language]);
 
-  // Save project functionality
+  // Save project functionality (имя берётся из projectName, сохраняется в БД и в дампе)
   const saveProject = useCallback(async () => {
+    const name = (projectName || currentProject?.name || "").trim() || `Проект ${new Date().toLocaleDateString()}`;
     const project = {
       id: currentProject?.id || Date.now().toString(),
-      name: currentProject?.name || `Проект ${new Date().toLocaleDateString()}`,
+      name,
       image_data: rawDataRef.current,
       image_width: W,
       image_height: H,
@@ -108,12 +117,15 @@ export default function Home({ theme, onThemeChange }) {
       return;
     }
     setCurrentProject(project);
+    setProjectName(project.name);
+    unsavedRef.current = false;
     alert(`${t('project_saved')}: ${project.name}`);
-  }, [W, H, palette, annotations, classes, currentProject, t]);
+  }, [W, H, palette, annotations, classes, currentProject, projectName, t]);
 
-  // Load project from menu
+  // Load project from menu (имя из БД/дампа подставляется в projectName)
   const handleProjectOpen = (project) => {
     if (project.image_data && project.image_data.length > 0) {
+      justLoadedRef.current = true;
       rawDataRef.current = project.image_data;
       setW(project.image_width || 640);
       setH(project.image_height || 480);
@@ -121,14 +133,46 @@ export default function Home({ theme, onThemeChange }) {
       setAnnotations(project.annotations || []);
       setClasses(project.classes || DEFAULT_CLASSES);
       setCurrentProject(project);
+      setProjectName(project.name || "");
       setLoaded(true);
       alert(`${t('project_loaded')}: ${project.name}`);
     }
   };
 
+  // Отслеживание несохранённых изменений для предупреждения при закрытии вкладки
+  useEffect(() => {
+    if (justLoadedRef.current) {
+      justLoadedRef.current = false;
+      unsavedRef.current = false;
+      return;
+    }
+    const hasContent = annotations.length > 0 || loaded;
+    if (hasContent) unsavedRef.current = true;
+  }, [annotations, classes, loaded]);
+
+  useEffect(() => {
+    const onBeforeUnload = (e) => {
+      if (unsavedRef.current) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
+
+  const displayProjectName = (projectName || currentProject?.name || "").trim() || t("unnamed_project");
+  const applyProjectNameEdit = (value) => {
+    const name = (value || "").trim() || t("unnamed_project");
+    setProjectName(name);
+    if (currentProject) setCurrentProject((prev) => (prev ? { ...prev, name } : null));
+    setEditingProjectName(false);
+  };
+  useEffect(() => {
+    if (editingProjectName && projectNameInputRef.current) projectNameInputRef.current.focus();
+  }, [editingProjectName]);
+
   // Create new project - clear all data
   const handleNewProject = async () => {
     setCurrentProject(null);
+    setProjectName(`${t('new_project')} ${new Date().toLocaleDateString()}`);
     setAnnotations([]);
     setClasses(DEFAULT_CLASSES);
     setSelClass(DEFAULT_CLASSES[0]);
@@ -158,6 +202,8 @@ export default function Home({ theme, onThemeChange }) {
     const saveResult = await storageService.saveProject(newProject);
     if (saveResult?.ok) {
       setCurrentProject(newProject);
+      setProjectName(newProject.name);
+      unsavedRef.current = false;
       alert(`${t('project_created')}: ${newProject.name}`);
     } else {
       alert(`${t('project_created')}: ${t('new_project')}. ${t('error')}: save failed`);
@@ -182,8 +228,8 @@ export default function Home({ theme, onThemeChange }) {
     }
   };
 
-  // Export handler with proper download
-  const handleExport = (format) => {
+  // Export handler: скачивание + сохранение в БД (если проект сохранён)
+  const handleExport = async (format) => {
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
     let content, filename, mime;
 
@@ -209,14 +255,52 @@ export default function Home({ theme, onThemeChange }) {
       }
 
       if (content) {
+        let savedToDb = false;
+        if (currentProject?.id) {
+          const saved = await storageService.saveProjectExport(currentProject.id, format, content);
+          savedToDb = saved?.ok;
+          if (savedToDb) setSavedExportFormats((prev) => (prev.includes(format) ? prev : [...prev, format]));
+          if (!saved?.ok) console.warn('Export save to DB failed:', saved?.reason);
+        }
         downloadFile(content, filename);
-        alert(`${t('success')}: ${filename} ${t('download')}`);
+        alert(savedToDb ? t('export_saved_to_db') : t('export_download_only'));
       }
     } catch (error) {
       console.error(`Export error: ${error.message}`);
       alert(`${t('error')}: ${error.message}`);
     }
   };
+
+  const handleDownloadExportFromDb = async (format) => {
+    if (!currentProject?.id) return;
+    try {
+      const { blob, filename } = await apiService.downloadProjectExport(currentProject.id, format);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert(`${t('error')}: ${e?.message || "Скачивание из БД не удалось"}`);
+    }
+  };
+
+  // Загрузка списка экспортов из БД при смене проекта
+  useEffect(() => {
+    if (!currentProject?.id) {
+      setSavedExportFormats([]);
+      return;
+    }
+    (async () => {
+      try {
+        const list = await apiService.getProjectExports(currentProject.id);
+        setSavedExportFormats(Array.isArray(list) ? list.map((e) => e.format) : []);
+      } catch {
+        setSavedExportFormats([]);
+      }
+    })();
+  }, [currentProject?.id]);
 
   // Load persisted state on mount
   useEffect(() => {
@@ -797,6 +881,67 @@ export default function Home({ theme, onThemeChange }) {
           >
             {W}×{H}
           </span>
+          <div
+            style={{ width: 1, height: 24, background: cs.border, margin: "0 4px" }}
+          />
+          {editingProjectName ? (
+            <input
+              ref={projectNameInputRef}
+              id="project-name-edit"
+              name="projectName"
+              type="text"
+              defaultValue={displayProjectName}
+              autoComplete="off"
+              onBlur={(e) => applyProjectNameEdit(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.target.blur();
+                }
+                if (e.key === "Escape") {
+                  setEditingProjectName(false);
+                }
+              }}
+              style={{
+                fontSize: 11,
+                color: cs.text || "#eee",
+                background: cs.surface || "#2a2a2a",
+                border: `1px solid ${cs.accent || "#4488ff"}`,
+                borderRadius: 4,
+                padding: "2px 8px",
+                minWidth: 140,
+                maxWidth: 220,
+                fontFamily: "inherit",
+              }}
+              title={t("rename_project")}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditingProjectName(true)}
+              title={t("rename_project")}
+              style={{
+                fontSize: 11,
+                color: cs.text || "#eee",
+                background: "transparent",
+                border: "1px solid transparent",
+                borderRadius: 4,
+                padding: "2px 6px",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                maxWidth: 220,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {displayProjectName}
+              </span>
+              <span style={{ flexShrink: 0, opacity: 0.7 }}>✎</span>
+            </button>
+          )}
         </div>
 
         <div style={{ display: "flex", gap: 4 }}>
@@ -921,8 +1066,9 @@ export default function Home({ theme, onThemeChange }) {
               background: "transparent",
               color: cs.dim,
             }}
+            title={savedExportFormats.includes("yolo") ? `${t("export_in_db")}. ${t("export_download_from_db")}` : ""}
           >
-            ↓ YOLO
+            ↓ YOLO{savedExportFormats.includes("yolo") ? " ✓" : ""}
           </button>
           <button
             onClick={() => handleExport('coco')}
@@ -938,8 +1084,9 @@ export default function Home({ theme, onThemeChange }) {
               background: "transparent",
               color: cs.dim,
             }}
+            title={savedExportFormats.includes("coco") ? `${t("export_in_db")}. ${t("export_download_from_db")}` : ""}
           >
-            ↓ COCO
+            ↓ COCO{savedExportFormats.includes("coco") ? " ✓" : ""}
           </button>
           <button
             onClick={() => handleExport('voc')}
@@ -955,9 +1102,34 @@ export default function Home({ theme, onThemeChange }) {
               background: "transparent",
               color: cs.dim,
             }}
+            title={savedExportFormats.includes("voc") ? `${t("export_in_db")}. ${t("export_download_from_db")}` : ""}
           >
-            ↓ Pascal VOC
+            ↓ Pascal VOC{savedExportFormats.includes("voc") ? " ✓" : ""}
           </button>
+          {currentProject?.id && savedExportFormats.length > 0 && (
+            <span style={{ fontSize: 9, color: cs.dim, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+              {t("export_in_db")}:
+              {savedExportFormats.map((fmt) => (
+                <button
+                  key={fmt}
+                  type="button"
+                  onClick={() => handleDownloadExportFromDb(fmt)}
+                  style={{
+                    padding: "2px 6px",
+                    fontSize: 9,
+                    border: "1px solid " + cs.border,
+                    borderRadius: 3,
+                    background: "transparent",
+                    color: cs.dim,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {fmt === "yolo" ? "YOLO" : fmt === "coco" ? "COCO" : "VOC"} {t("export_download_from_db")}
+                </button>
+              ))}
+            </span>
+          )}
           <button
             onClick={() => setShowImageModal(true)}
             style={{

@@ -1,5 +1,7 @@
 # ThermoLabel - Thermal Image Annotation Tool
 
+**Stable v1.0.0**
+
 Приложение для аннотирования тепловых изображений. **Запуск только через Docker.** Инициализация и перенос данных — **только по дампу** (SQL/бинарный дамп PostgreSQL).
 
 ## Требования
@@ -80,6 +82,35 @@ docker exec thermolabel-db pg_dump -U thermolabel_user -d thermolabel_db > datab
 
 ---
 
+## Просмотр данных в БД
+
+Чтобы убедиться, что экспорты (YOLO/COCO/Pascal VOC) и другие данные сохранены в БД, можно подключиться к PostgreSQL и выполнить запросы.
+
+**Подключение к БД (psql в контейнере):**
+
+```bash
+docker exec -it thermolabel-db psql -U thermolabel_user -d thermolabel_db
+```
+
+**Примеры запросов:**
+
+```sql
+-- Список проектов
+SELECT id, name, created_at, updated_at FROM projects ORDER BY updated_at DESC;
+
+-- Сохранённые экспорты (YOLO/COCO/VOC) по проектам
+SELECT project_id, format, length(content) AS content_length, created_at
+FROM project_exports
+ORDER BY project_id, format;
+
+-- Настройки приложения
+SELECT key, value FROM app_settings;
+```
+
+Выход из psql: `\q`.
+
+---
+
 ## Тесты перед Pull Request
 
 Перед созданием pull request необходимо выполнить тесты. Запуск **только в Docker**:
@@ -123,6 +154,9 @@ docker exec thermolabel-frontend npm test -- --coverage --watchAll=false
 - `GET /api/projects/{id}` - Get project details
 - `POST /api/projects` - Create/update project
 - `DELETE /api/projects/{id}` - Delete project
+- `GET /api/projects/{id}/exports` - List saved exports (YOLO/COCO/VOC) for project
+- `GET /api/projects/{id}/exports/{format}` - Download saved export (format: yolo, coco, voc)
+- `POST /api/projects/{id}/exports` - Save export to DB (body: `{ "format", "content" }`)
 
 ### Settings
 - `GET /api/settings/classes` - Get class definitions
@@ -200,8 +234,9 @@ Routes (API) → Services (Business Logic) → Repositories (Data Access) → Da
 
 ### Database Schema
 
-- `projects` - Thermal image projects with annotations
-- `app_settings` - Application settings storage
+- `projects` — проекты (изображения, аннотации, классы)
+- `app_settings` — настройки приложения (классы и др.)
+- `project_exports` — сохранённые экспорты YOLO/COCO/Pascal VOC по проектам
 
 ---
 

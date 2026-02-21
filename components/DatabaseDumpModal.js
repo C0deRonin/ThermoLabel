@@ -5,14 +5,15 @@ const DatabaseDumpModal = ({ isOpen, onClose, t = (k) => k }) => {
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importFile, setImportFile] = useState(null);
+  const [clearBeforeImport, setClearBeforeImport] = useState(false);
   const [message, setMessage] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleExport = async () => {
+  const handleExport = async (dataOnly = false) => {
     setMessage(null);
     setExporting(true);
     try {
-      const { blob, filename } = await apiService.exportDump();
+      const { blob, filename } = await apiService.exportDump(dataOnly);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -46,7 +47,7 @@ const DatabaseDumpModal = ({ isOpen, onClose, t = (k) => k }) => {
     setMessage(null);
     setImporting(true);
     try {
-      const result = await apiService.importDump(importFile);
+      const result = await apiService.importDump(importFile, clearBeforeImport);
       setMessage({
         type: "success",
         text: result?.message || t("dump_import_success"),
@@ -82,27 +83,57 @@ const DatabaseDumpModal = ({ isOpen, onClose, t = (k) => k }) => {
 
         <section style={{ marginBottom: 20 }}>
           <h3 style={{ fontSize: 13, marginBottom: 8 }}>{t("dump_export")}</h3>
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={exporting}
-            style={{
-              padding: "8px 14px",
-              border: "1px solid var(--color-border)",
-              borderRadius: 6,
-              background: "var(--color-surface)",
-              color: "var(--color-text)",
-              cursor: exporting ? "wait" : "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            {exporting ? "…" : t("dump_download")}
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => handleExport(false)}
+              disabled={exporting}
+              style={{
+                padding: "8px 14px",
+                border: "1px solid var(--color-border)",
+                borderRadius: 6,
+                background: "var(--color-surface)",
+                color: "var(--color-text)",
+                cursor: exporting ? "wait" : "pointer",
+                fontFamily: "inherit",
+                fontSize: 12,
+              }}
+            >
+              {exporting ? "…" : t("dump_download")}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExport(true)}
+              disabled={exporting}
+              style={{
+                padding: "8px 14px",
+                border: "1px solid var(--color-border)",
+                borderRadius: 6,
+                background: "var(--color-surface)",
+                color: "var(--color-text)",
+                cursor: exporting ? "wait" : "pointer",
+                fontFamily: "inherit",
+                fontSize: 12,
+              }}
+            >
+              {exporting ? "…" : t("dump_download_data_only")}
+            </button>
+          </div>
         </section>
 
         <section style={{ marginBottom: 16 }}>
           <h3 style={{ fontSize: 13, marginBottom: 8 }}>{t("dump_import")}</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={clearBeforeImport}
+                onChange={(e) => setClearBeforeImport(e.target.checked)}
+                name="clearBeforeImport"
+                id="dump-clear-before"
+              />
+              {t("dump_import_clear_before")}
+            </label>
             <input
               ref={fileInputRef}
               type="file"
