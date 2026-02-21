@@ -293,12 +293,6 @@ docker compose restart
 
 ---
 
-## License
-
-MIT License - See LICENSE file
-
----
-
 ## Support
 
 For issues and questions, please create an issue on GitHub:
