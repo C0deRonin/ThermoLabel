@@ -33,23 +33,19 @@
 
 ## 6. Скриншоты и протокол интерактивной проверки
 
-Во время проверки были выполнены действия в интерфейсе, а не только снят статичный preview.
+> Примечание: если ваш Markdown-рендер не показывает inline-изображения по `browser:` URI,
+> откройте скриншоты по ссылкам ниже.
 
-![Главный экран](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/01-home.png)
+- [Главный экран](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/01-home.png)
+- [Вкладка «Проекты»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/02-Проекты.png)
+- [Вкладка «Аналитика»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/03-Аналитика.png)
+- [Вкладка «Классы»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/04-Классы.png)
+- [Действие «Сохранить»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/05-Сохранить.png)
+- [Действие «Загрузить»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/06-Загрузить.png)
 
-![Вкладка «Проекты»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/02-Проекты.png)
+### Протокол проверки
 
-![Вкладка «Аналитика»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/03-Аналитика.png)
-
-![Вкладка «Классы»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/04-Классы.png)
-
-![Действие «Сохранить»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/05-Сохранить.png)
-
-![Действие «Загрузить»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/06-Загрузить.png)
-
-### Выполненные шаги
-
-1. Открыл приложение и дождался полной загрузки UI.
-2. Перешёл по основным вкладкам: «Проекты», «Аналитика», «Классы».
-3. Нажал кнопки «Сохранить» и «Загрузить».
-4. Подтвердил, что после взаимодействий интерфейс остаётся рабочим.
+1. Во время тестирования был выполнен запуск приложения с ожиданием полной загрузки UI.
+2. Во время тестирования были выполнены переходы по основным вкладкам: «Проекты», «Аналитика», «Классы».
+3. Во время тестирования были выполнены нажатия на кнопки «Сохранить» и «Загрузить».
+4. По результатам взаимодействия подтверждена работоспособность интерфейса.

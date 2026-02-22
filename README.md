@@ -63,38 +63,30 @@ npm test -- --runInBand
 
 ## Навигация по документации (перенесено из docs/README.md)
 
-- `docs/guides/QUICKSTART.md` — быстрый старт.
-- `docs/guides/USING_GUIDE.md` — руководство по использованию.
-- `docs/api/API_EXAMPLES.md` — примеры запросов к backend API.
-- `docs/ARCHITECTURE.md` — обзор архитектуры.
-- `docs/STRUCTURE.md` — структура репозитория.
-- `docs/TESTING.md` — подход к тестированию.
-- `docs/ROADMAP.md` — план развития.
-- `docs/reports/` — отчёты по этапам разработки.
-
-## Лицензия
-
-В текущей версии лицензия не указана отдельным файлом.
+- [Быстрый старт](docs/guides/QUICKSTART.md)
+- [Руководство по использованию](docs/guides/USING_GUIDE.md)
+- [Примеры API](docs/api/API_EXAMPLES.md)
+- [Архитектура](docs/ARCHITECTURE.md)
+- [Структура репозитория](docs/STRUCTURE.md)
+- [Тестирование](docs/TESTING.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Отчёты](docs/reports/)
 
 ## Скриншоты интерфейса и взаимодействие
 
-Ниже — скриншоты не только превью, но и действий в интерфейсе (переключение вкладок и нажатие кнопок).
+> Примечание: в некоторых Markdown-рендерах inline-показ изображений по `browser:` URI не поддерживается.
+> Ниже даны прямые ссылки на скриншоты и описание действий.
 
-![Главный экран](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/01-home.png)
+- [Главный экран](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/01-home.png)
+- [Переход во вкладку «Проекты»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/02-Проекты.png)
+- [Переход во вкладку «Аналитика»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/03-Аналитика.png)
+- [Переход во вкладку «Классы»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/04-Классы.png)
+- [Нажатие кнопки «Сохранить»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/05-Сохранить.png)
+- [Нажатие кнопки «Загрузить»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/06-Загрузить.png)
 
-![Переход во вкладку «Проекты»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/02-Проекты.png)
+### Протокол интерактивной проверки
 
-![Переход во вкладку «Аналитика»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/03-Аналитика.png)
-
-![Переход во вкладку «Классы»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/04-Классы.png)
-
-![Нажатие кнопки «Сохранить»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/05-Сохранить.png)
-
-![Нажатие кнопки «Загрузить»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/06-Загрузить.png)
-
-### Что было проверено интерактивно
-
-- Открытие приложения в браузере и рендер главного экрана.
-- Переключение между вкладками: «Проекты», «Аналитика», «Классы».
-- Нажатия на управляющие кнопки «Сохранить» и «Загрузить».
-- Проверка того, что интерфейс реагирует на действия без падения frontend.
+- Во время тестирования был выполнен запуск приложения в браузере с ожиданием полной загрузки главного экрана.
+- Во время тестирования были выполнены переходы по основным вкладкам: «Проекты», «Аналитика», «Классы».
+- Во время тестирования были выполнены нажатия на управляющие кнопки «Сохранить» и «Загрузить».
+- По результатам взаимодействия подтверждена стабильная реакция интерфейса без падения frontend.
