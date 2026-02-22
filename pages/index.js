@@ -853,7 +853,7 @@ export default function Home({ theme, onThemeChange }) {
                 letterSpacing: 1,
               }}
             >
-              ThermoLabel v2
+              Infralabel
             </div>
             <div
               style={{
