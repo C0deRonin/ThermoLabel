@@ -23,7 +23,7 @@
 ## Быстрый старт
 
 - [**QUICKSTART.md**](./guides/QUICKSTART.md) — запуск через Docker
-- [**USING_GUIDE.md**](./guides/USING_GUIDE.md) — работа с приложением
+- [**USING_GUIDE.md**](./guides/USING_GUIDE.md) — подробное руководство по интерфейсу: карта экрана, аннотация (bbox / полигон / порог), вкладки «Аналитика» и «Классы», проекты, экспорт YOLO / COCO / Pascal VOC, дамп БД
 
 ---
 
