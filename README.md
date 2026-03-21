@@ -56,13 +56,15 @@ npm test -- --runInBand
 - `lib/` — сервисы и вспомогательные модули frontend.
 - `backend/` — серверная часть.
 - `docs/` — документация, гайды и отчёты.
+- `docs/images/` — скриншоты для README (см. [`docs/images/README.md`](docs/images/README.md)).
 
 ## Документация
 
 Подробные материалы находятся в папке `docs/` (начните с `docs/guides/QUICKSTART.md`).
 
-## Навигация по документации (перенесено из docs/README.md)
+## Навигация по документации
 
+- [Обзор `docs/` и галерея скриншотов](docs/README.md)
 - [Быстрый старт](docs/guides/QUICKSTART.md)
 - [Руководство по использованию](docs/guides/USING_GUIDE.md)
 - [Примеры API](docs/api/API_EXAMPLES.md)
@@ -72,21 +74,18 @@ npm test -- --runInBand
 - [Roadmap](docs/ROADMAP.md)
 - [Отчёты](docs/reports/)
 
-## Скриншоты интерфейса и взаимодействие
+## Скриншоты интерфейса
 
-> Примечание: в некоторых Markdown-рендерах inline-показ изображений по `browser:` URI не поддерживается.
-> Ниже даны прямые ссылки на скриншоты и описание действий.
+| Аннотация: инструменты, палитра, классы, список объектов | Меню «Сохранённые проекты» |
+|:---:|:---:|
+| ![Аннотация](docs/images/01-annotation.jpg) | ![Проекты](docs/images/02-projects-modal.jpg) |
 
-- [Главный экран](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/01-home.png)
-- [Переход во вкладку «Проекты»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/02-Проекты.png)
-- [Переход во вкладку «Аналитика»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/03-Аналитика.png)
-- [Переход во вкладку «Классы»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/04-Классы.png)
-- [Нажатие кнопки «Сохранить»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/05-Сохранить.png)
-- [Нажатие кнопки «Загрузить»](browser:/tmp/codex_browser_invocations/6dc1a586d9198b64/artifacts/artifacts/flow/06-Загрузить.png)
+| Дамп БД: экспорт/импорт SQL | Аналитика: графики и статистика |
+|:---:|:---:|
+| ![Дамп БД](docs/images/03-db-dump.jpg) | ![Аналитика](docs/images/04-analytics.jpg) |
 
-### Протокол интерактивной проверки
+| Управление классами | Рабочая область (детали) |
+|:---:|:---:|
+| ![Классы](docs/images/05-classes.jpg) | ![Детали](docs/images/06-annotation-detail.jpg) |
 
-- Во время тестирования был выполнен запуск приложения в браузере с ожиданием полной загрузки главного экрана.
-- Во время тестирования были выполнены переходы по основным вкладкам: «Проекты», «Аналитика», «Классы».
-- Во время тестирования были выполнены нажатия на управляющие кнопки «Сохранить» и «Загрузить».
-- По результатам взаимодействия подтверждена стабильная реакция интерфейса без падения frontend.
+*Файлы лежат в [`docs/images/`](docs/images/). Подписи к файлам — [`docs/images/README.md`](docs/images/README.md).*
