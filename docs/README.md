@@ -1,8 +1,8 @@
-# ThermoLabel — документация
+# Infralabel — документация
 
-**Stable v1.0.0** · [Корневой README](../README.md)
+[Корневой README](../README.md)
 
-Веб-приложение для аннотирования тепловых изображений (Docker, PostgreSQL). В интерфейсе может отображаться название **Infralabel** — это тот же продукт (брендинг UI).
+Веб-приложение для разметки термальных изображений (Docker, PostgreSQL).
 
 ---
 
@@ -53,7 +53,7 @@
 - [STATISTICS_v0.3.0.md](./reports/STATISTICS_v0.3.0.md)
 - [COMPLETION_REPORT.md](./reports/COMPLETION_REPORT.md)
 
-Актуальное состояние продукта — в корневом [README](../README.md) и в этом файле (v1.0.0).
+Актуальное состояние продукта — в корневом [README](../README.md).
 
 ---
 
@@ -70,5 +70,4 @@ docs/
 
 ---
 
-**Версия документации:** 1.0.0  
-**Репозиторий:** [github.com/C0deRonin/ThermoLabel](https://github.com/C0deRonin/ThermoLabel)
+**Репозиторий:** [github.com/C0deRonin/Infralabel](https://github.com/C0deRonin/Infralabel)
